@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Brand Deep Navy Blue */
+    --primary: 222 47% 14%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary Cool Slate */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Brand Muted Teal Accent */
+    --accent: 174 85% 31%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222 47% 14%;
+
+    --radius: 0.5rem;
+
+    /* Status Colors */
+    --status-searching: 217 91% 60%;
+    --status-matched: 174 85% 31%;
+    --status-verify: 38 92% 50%;
+    --status-recovered: 142 71% 45%;
+  }
+
+  .dark {
+    /* Deep Charcoal Navy (Never pure black) */
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Lightened brand navy for dark mode AA contrast */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 7%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* Brand Teal in Dark Mode */
+    --accent: 173 80% 40%;
+    --accent-foreground: 222 47% 7%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+
+    /* Status Colors in Dark Mode */
+    --status-searching: 217 91% 65%;
+    --status-matched: 173 80% 45%;
+    --status-verify: 38 92% 55%;
+    --status-recovered: 142 71% 50%;
+  }
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@vit/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "tailwind.config.js",
+  "exports": {
+    "./tailwind": "./tailwind.config.js",
+    "./tokens.css": "./tokens.css",
+    "./tsconfig.base.json": "./tsconfig.base.json"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.14"
+  }
+}
