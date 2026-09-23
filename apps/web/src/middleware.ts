@@ -1,37 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isSessionValid, isStaffSessionValid } from "@/lib/auth/session-validator";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const staffCookie = request.cookies.get("vit_staff_session")?.value;
+  const studentCookie = request.cookies.get("vit_session")?.value;
+
+  const hasStudentAuth = isSessionValid(studentCookie);
+  const hasStaffAuth = isStaffSessionValid(staffCookie, studentCookie);
+  const isAuthenticated = hasStudentAuth || hasStaffAuth;
 
   // 1. Staff / Admin Route Protection (/admin/*)
   if (pathname.startsWith("/admin")) {
-    const staffCookie = request.cookies.get("vit_staff_session")?.value;
-    const studentCookie = request.cookies.get("vit_session")?.value;
-
-    let hasStaffAuth = false;
-    if (staffCookie) {
-      try {
-        const decoded = decodeURIComponent(staffCookie);
-        const staff = JSON.parse(decoded);
-        if (staff.email && (staff.staffId || staff.role === "Staff" || staff.role === "Admin")) {
-          hasStaffAuth = true;
-        }
-      } catch (e) {
-        if (staffCookie.length > 5) hasStaffAuth = true;
-      }
-    }
-
-    if (!hasStaffAuth && studentCookie) {
-      try {
-        const decoded = decodeURIComponent(studentCookie);
-        const user = JSON.parse(decoded);
-        if (user.role === "Staff" || user.role === "Admin") {
-          hasStaffAuth = true;
-        }
-      } catch (e) {}
-    }
-
     if (!hasStaffAuth) {
       const loginUrl = new URL("/staff/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
@@ -56,25 +37,18 @@ export function middleware(request: NextRequest) {
   );
 
   if (isProtectedStudent) {
-    const studentCookie = request.cookies.get("vit_session")?.value;
-    let isAuthenticated = false;
-
-    if (studentCookie) {
-      try {
-        const decoded = decodeURIComponent(studentCookie);
-        const session = JSON.parse(decoded);
-        if (session.id && session.email && session.email.endsWith("@vit.edu")) {
-          isAuthenticated = true;
-        }
-      } catch (e) {
-        if (studentCookie.length > 5) isAuthenticated = true;
-      }
-    }
-
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 3. If already authenticated and visiting /login, redirect to /dashboard (or redirect target)
+  if (pathname === "/login") {
+    if (isAuthenticated) {
+      const redirectTarget = request.nextUrl.searchParams.get("redirect") || "/dashboard";
+      return NextResponse.redirect(new URL(redirectTarget, request.url));
     }
   }
 
@@ -92,13 +66,23 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/dashboard",
     "/report/:path*",
+    "/report",
     "/matches/:path*",
+    "/matches",
     "/claim/:path*",
+    "/claim",
     "/recovered/:path*",
+    "/recovered",
     "/my-reports/:path*",
+    "/my-reports",
     "/notifications/:path*",
+    "/notifications",
     "/profile/:path*",
+    "/profile",
     "/admin/:path*",
+    "/admin",
+    "/login",
   ],
 };

@@ -19,6 +19,21 @@ export default function ProfilePage() {
     if (session) {
       setProfile(session);
       setEditForm(session);
+    } else {
+      fetch("/api/auth/me")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.session) {
+            setProfile(data.session);
+            setEditForm(data.session);
+            setStoredSession(data.session);
+          } else {
+            window.location.href = "/login?redirect=/profile";
+          }
+        })
+        .catch(() => {
+          window.location.href = "/login?redirect=/profile";
+        });
     }
   }, []);
 

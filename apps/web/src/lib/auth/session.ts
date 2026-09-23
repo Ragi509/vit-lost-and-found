@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { parseSessionCookie } from "./session-validator";
 
 export interface UserSession {
   id: string;
@@ -53,14 +54,23 @@ export function parseVitEmail(email: string): { fullName: string; prn: string; r
 export function getStoredSession(): UserSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem("vit_user_session");
-    if (raw) return JSON.parse(raw) as UserSession;
+    let raw = localStorage.getItem("vit_user_session");
+    if (!raw) {
+      raw = localStorage.getItem("vit_staff_session");
+    }
+    if (raw) {
+      const parsed = parseSessionCookie(raw);
+      if (parsed) return parsed as UserSession;
+    }
 
     // Fallback: check document.cookie
-    const match = document.cookie.match(/vit_session=([^;]+)/);
+    let match = document.cookie.match(/vit_session=([^;]+)/);
+    if (!match) {
+      match = document.cookie.match(/vit_staff_session=([^;]+)/);
+    }
     if (match && match[1]) {
-      const decoded = decodeURIComponent(match[1]);
-      return JSON.parse(decoded) as UserSession;
+      const parsed = parseSessionCookie(match[1]);
+      if (parsed) return parsed as UserSession;
     }
     return null;
   } catch (e) {
