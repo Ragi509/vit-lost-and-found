@@ -208,11 +208,43 @@ type AdminNavTab = "claims" | "analytics" | "reports" | "invites";
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>("claims");
-  const [claims, setClaims] = useState<PendingClaim[]>(INITIAL_CLAIMS);
-  const [selectedClaim, setSelectedClaim] = useState<PendingClaim | null>(INITIAL_CLAIMS[0] || null);
+  const [claims, setClaims] = useState<PendingClaim[]>([]);
+  const [selectedClaim, setSelectedClaim] = useState<PendingClaim | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const staffCookie = typeof document !== "undefined" ? document.cookie.includes("vit_staff_session") : false;
+    const staffLocal = typeof window !== "undefined" ? localStorage.getItem("vit_staff_session") : null;
+    if (!staffCookie && !staffLocal) {
+      window.location.href = "/staff/login";
+      return;
+    }
+
+    const fetchClaims = async () => {
+      try {
+        const res = await fetch("/api/admin/claims");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.claims && Array.isArray(data.claims) && data.claims.length > 0) {
+            setClaims(data.claims);
+            setSelectedClaim(data.claims[0]);
+          } else {
+            setClaims(INITIAL_CLAIMS);
+            setSelectedClaim(INITIAL_CLAIMS[0]);
+          }
+        } else {
+          setClaims(INITIAL_CLAIMS);
+          setSelectedClaim(INITIAL_CLAIMS[0]);
+        }
+      } catch (e) {
+        setClaims(INITIAL_CLAIMS);
+        setSelectedClaim(INITIAL_CLAIMS[0]);
+      }
+    };
+    fetchClaims();
+  }, []);
 
   // Reports state
   const [reports, setReports] = useState<CampusReportRecord[]>(INITIAL_REPORTS);

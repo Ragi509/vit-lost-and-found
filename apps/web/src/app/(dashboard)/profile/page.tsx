@@ -1,25 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, ShieldCheck, Moon, Sun, Bell, CheckCircle2, History, Building2, Edit3, Save, Check } from "lucide-react";
+import { User, ShieldCheck, Moon, Sun, Bell, CheckCircle2, History, Building2, Edit3, Save, Check, LogOut } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input } from "@vit/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { getStoredSession, setStoredSession, UserSession } from "@/lib/auth/session";
+import { getStoredSession, setStoredSession, clearStoredSession, UserSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserSession>({
-    id: "a1111111-1111-1111-1111-111111111111",
-    fullName: "Ragini Kengale",
-    email: "ragini.kengale24@vit.edu",
-    role: "Student",
-    prn: "PRN-2410892",
-    department: "Department of Electronics Engineering",
-    campus: "Bibwewadi Main Campus, Pune",
-  });
-
+  const [profile, setProfile] = useState<UserSession | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState(profile);
+  const [editForm, setEditForm] = useState<UserSession | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -33,6 +24,7 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editForm) return;
     setProfile(editForm);
     setStoredSession(editForm);
     setIsEditing(false);
@@ -56,6 +48,7 @@ export default function ProfilePage() {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return "VIT";
     return name
       .split(" ")
       .map((n) => n[0])
@@ -63,6 +56,14 @@ export default function ProfilePage() {
       .toUpperCase()
       .substring(0, 2);
   };
+
+  if (!profile) {
+    return (
+      <div className="max-w-3xl mx-auto py-12 text-center text-sm text-slate-500">
+        Loading profile credentials...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -145,31 +146,31 @@ export default function ProfilePage() {
               <Input
                 label="Full Name"
                 id="editFullName"
-                value={editForm.fullName}
-                onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                value={editForm?.fullName || profile.fullName}
+                onChange={(e) => setEditForm({ ...(editForm || profile), fullName: e.target.value })}
                 required
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="PRN / ID Number"
                   id="editPrn"
-                  value={editForm.prn}
-                  onChange={(e) => setEditForm({ ...editForm, prn: e.target.value })}
+                  value={editForm?.prn || profile.prn}
+                  onChange={(e) => setEditForm({ ...(editForm || profile), prn: e.target.value })}
                   required
                 />
                 <Input
                   label="Campus Location"
                   id="editCampus"
-                  value={editForm.campus}
-                  onChange={(e) => setEditForm({ ...editForm, campus: e.target.value })}
+                  value={editForm?.campus || profile.campus}
+                  onChange={(e) => setEditForm({ ...(editForm || profile), campus: e.target.value })}
                   required
                 />
               </div>
               <Input
                 label="Department"
                 id="editDepartment"
-                value={editForm.department}
-                onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                value={editForm?.department || profile.department}
+                onChange={(e) => setEditForm({ ...(editForm || profile), department: e.target.value })}
                 required
               />
               <div className="flex justify-end gap-2 pt-2">
@@ -245,6 +246,21 @@ export default function ProfilePage() {
                 }`}
               />
             </button>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                clearStoredSession();
+                window.location.href = "/login";
+              }}
+              className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              <span>Sign Out of Campus Session</span>
+            </Button>
           </div>
         </CardContent>
       </Card>

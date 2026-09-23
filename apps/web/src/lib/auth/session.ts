@@ -54,8 +54,15 @@ export function getStoredSession(): UserSession | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem("vit_user_session");
-    if (!raw) return null;
-    return JSON.parse(raw) as UserSession;
+    if (raw) return JSON.parse(raw) as UserSession;
+
+    // Fallback: check document.cookie
+    const match = document.cookie.match(/vit_session=([^;]+)/);
+    if (match && match[1]) {
+      const decoded = decodeURIComponent(match[1]);
+      return JSON.parse(decoded) as UserSession;
+    }
+    return null;
   } catch (e) {
     return null;
   }
@@ -64,10 +71,25 @@ export function getStoredSession(): UserSession | null {
 export function setStoredSession(session: UserSession): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem("vit_user_session", JSON.stringify(session));
+    const serialized = JSON.stringify(session);
+    localStorage.setItem("vit_user_session", serialized);
+    document.cookie = `vit_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
     window.dispatchEvent(new Event("vit_session_updated"));
   } catch (e) {
-    console.warn("Could not save session to localStorage:", e);
+    console.warn("Could not save session to localStorage/cookie:", e);
+  }
+}
+
+export function clearStoredSession(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("vit_user_session");
+    localStorage.removeItem("vit_staff_session");
+    document.cookie = "vit_session=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "vit_staff_session=; path=/; max-age=0; SameSite=Lax";
+    window.dispatchEvent(new Event("vit_session_updated"));
+  } catch (e) {
+    console.warn("Could not clear session:", e);
   }
 }
 

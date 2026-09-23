@@ -19,17 +19,9 @@ interface MatchAlert {
 
 export default function UserDashboard() {
   const [user, setUser] = useState<UserSession | null>(null);
-  const [activeReportsCount, setActiveReportsCount] = useState(1);
-  const [recoveredCount, setRecoveredCount] = useState(42);
-  const [matchAlert, setMatchAlert] = useState<MatchAlert | null>({
-    match_id: "match-001",
-    found_item_name: "Texas Instruments Graphing Calculator",
-    found_location: "D-Block, Computer Lab 304",
-    holding_location: "D-Block Security Counter (Ground Floor)",
-    confidence_score: 0.91,
-    approximate_label: "~91% match",
-    lost_item_name: "TI-84 Plus CE Graphing Calculator",
-  });
+  const [activeReportsCount, setActiveReportsCount] = useState(0);
+  const [recoveredCount, setRecoveredCount] = useState(0);
+  const [matchAlert, setMatchAlert] = useState<MatchAlert | null>(null);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
 
   useEffect(() => {
@@ -39,16 +31,7 @@ export default function UserDashboard() {
       if (session) {
         setUser(session);
       } else {
-        // Fallback to primary seed student Ragini Kengale
-        setUser({
-          id: "a1111111-1111-1111-1111-111111111111",
-          email: "ragini.kengale24@vit.edu",
-          fullName: "Ragini Kengale",
-          role: "Student",
-          prn: "PRN-2410892",
-          department: "Department of Electronics Engineering",
-          campus: "Bibwewadi Main Campus, Pune",
-        });
+        setUser(null);
       }
     };
 
@@ -135,8 +118,8 @@ export default function UserDashboard() {
     };
   }, []);
 
-  const userName = user?.fullName || "VIT Student";
-  const userRole = `${user?.role || "Student"} • ${user?.prn || "PRN-2410892"}`;
+  const userName = user?.fullName || "Student";
+  const userRole = user ? `${user.role} • ${user.prn}` : "Authenticated Session";
 
   return (
     <div className="space-y-8">

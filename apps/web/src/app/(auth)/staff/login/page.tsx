@@ -26,7 +26,9 @@ export default function StaffLoginPage() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      localStorage.setItem("vit_staff_session", JSON.stringify({ email, staffId, role: "Staff" }));
+      const sessionObj = { email, staffId, role: "Staff" };
+      localStorage.setItem("vit_staff_session", JSON.stringify(sessionObj));
+      document.cookie = `vit_staff_session=${encodeURIComponent(JSON.stringify(sessionObj))}; path=/; max-age=604800; SameSite=Lax`;
       router.push("/admin/console");
     }, 600);
   };
