@@ -49,7 +49,14 @@ The platform is running in production with the following live architecture:
 2. **Current OTP Delivery Scope**:
    - **Observed Behavior**: Resend's shared testing identity (`onboarding@resend.dev`) strictly enforces sandbox routing to the verified email address used to register the Resend account (`raginikengale@gmail.com`).
    - **Smart Relay Behavior**: When an institutional address such as `aditya.joshi24@vit.edu` or `ragini.kengale24@vit.edu` requests an OTP, the system catches the sandbox constraint and automatically dispatches the single-use verification code to `raginikengale@gmail.com` with a clear institutional sandbox badge.
-   - **Verification & Session**: Entering the 6-digit code validates against the database in under **500 ms**, provisions the user profile in `public.users`, parses their institutional name and PRN, and redirects to `/dashboard`.
+   - **Verification & Session**: Entering the 6-digit code validates against the database in under **500 ms**, provisions the user profile in `public.users`, parses their institutional name and PRN, issues an HTTP session cookie (`vit_session`), and redirects to `/dashboard`.
+
+### Server-Side Route Protection & Zero-Leak Edge Middleware
+* **Next.js Edge Middleware (`src/middleware.ts`)**: Evaluates incoming request cookies before any server component rendering or page delivery occurs.
+  - Unauthenticated requests to `/dashboard`, `/my-reports`, `/profile`, `/notifications`, `/matches`, and report forms immediately receive an **HTTP 307 Temporary Redirect** to `/login?redirect=...`. Zero protected page HTML or user state is ever transmitted.
+  - Unauthenticated requests to `/admin/console` immediately receive an **HTTP 307 Temporary Redirect** to `/staff/login?redirect=/admin/console`.
+* **Server Component Layout Guards**: Both `(dashboard)/layout.tsx` and `admin/layout.tsx` perform secondary server-side cookie verification, providing defense-in-depth against unauthorized access.
+* **Zero Hardcoded Leaks**: Client component states initialize with empty sets/null values; all student identity, reports, and match data are strictly populated from authenticated sessions.
 
 ### Admin & Staff Workflow
 * **Discreet Staff Login**: A dedicated link exists on the landing page footer and beneath the student sign-in card routing to `/staff/login`.
