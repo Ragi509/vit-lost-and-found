@@ -12,6 +12,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "VIT Lost & Found — Campus Recovery Platform",
   description: "AI-assisted lost and found recovery platform for Vishwakarma Institute of Technology, Pune.",
+  applicationName: "VIT Lost & Found",
   icons: {
     icon: "/favicon.ico",
   },
