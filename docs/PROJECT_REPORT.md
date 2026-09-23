@@ -1,8 +1,10 @@
 # VIT Lost & Found — Live-Verified Project Report
 
-> **Verification Timestamp**: 2026-09-23T04:32:00Z  
-> **Status**: Verified against Live Production Deployment  
+> **Verification Timestamp**: 2026-09-23T05:58:00Z  
+> **Status**: Verified against Live Persistent Vercel Production Deployment  
 > **Target Institution**: Vishwakarma Institute of Technology (VIT), Pune  
+> **Production URL**: [https://vit-lost-and-found-roan.vercel.app](https://vit-lost-and-found-roan.vercel.app)  
+> **GitHub Repository**: [https://github.com/Ragi509/vit-lost-and-found](https://github.com/Ragi509/vit-lost-and-found)  
 
 ---
 
@@ -22,17 +24,18 @@ The platform is running in production with the following live architecture:
 
 | Subsystem | Technology / Provider | Deployment Target | Live Status |
 | :--- | :--- | :--- | :---: |
-| **Frontend & API Gateway** | Next.js 14.2.15 (App Router, Tailwind CSS, TypeScript) | Next.js Production Node Server (`localhost:3333`) connected via Cloudflare Tunnel | **Live / Verified** |
+| **Frontend & API Gateway** | Next.js 14.2.15 (App Router, Tailwind CSS, TypeScript) | **Vercel Serverless Production Edge** (`vit-lost-and-found-roan.vercel.app`) | **Live / Verified** |
 | **Database & Auth** | Supabase Managed PostgreSQL with `pgcrypto` & `pgvector` | Supabase Cloud (`ruvkhuocnixoouphosku.supabase.co`) | **Live / Verified** |
 | **AI Vector Embeddings** | Python FastAPI (`all-MiniLM-L6-v2` + OpenAI CLIP ViT-B/32) | Containerized Microservice on Render (internal-only API) | **Live / Verified** |
-| **Transactional Email / OTP** | Resend API & SMTP Gateway (`smtp.resend.com`) | Resend Global Infrastructure | **Live / Verified (Sandbox)** |
-| **Public Edge Connectivity** | Cloudflare Tunnel (`cloudflared` v2026.9.1, HTTP/2 Protocol) | Global Cloudflare Anycast Network | **Live / Verified** |
+| **Transactional Email / OTP** | Resend API & SMTP Gateway (`smtp.resend.com`) | Resend Global Infrastructure | **Working With Caveat (Sandbox)** |
+| **Continuous Deployment** | GitHub Actions / Vercel Monorepo Integration | `Ragi509/vit-lost-and-found` (`main` branch) | **Live / Verified** |
 
 ---
 
 ## 3. Live Deployment Details
 
-* **Production Frontend Public URL**: [https://separate-drives-significantly-tiny.trycloudflare.com](https://separate-drives-significantly-tiny.trycloudflare.com)
+* **Production Frontend Public URL**: [https://vit-lost-and-found-roan.vercel.app](https://vit-lost-and-found-roan.vercel.app)
+* **GitHub Repository**: [https://github.com/Ragi509/vit-lost-and-found](https://github.com/Ragi509/vit-lost-and-found)
 * **Supabase Project Region**: `ap-south-1` (Mumbai, India — local low-latency zone for VIT Pune campus access).
 * **Embedding Microservice Status**: Deployed as an internal-only private service with mandatory Bearer token authentication (`EMBEDDING_SERVICE_API_KEY`). Raw endpoints are shielded from public internet inspection and only invoked server-side by Next.js route handlers.
 * **Database Vector Extension**: PostgreSQL extension `vector` (v0.8.0) enabled with IVFFlat cosine indexing for 384-dimensional text vectors and 512-dimensional CLIP image vectors.

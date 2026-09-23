@@ -1,7 +1,8 @@
 # VIT Lost & Found — Comprehensive Feature List & Live Verification Matrix
 
 > **Verification Date**: 2026-09-23  
-> **Environment**: Production Cloudflare Tunnel (`separate-drives-significantly-tiny.trycloudflare.com`) + Supabase Cloud (`ruvkhuocnixoouphosku.supabase.co`)  
+> **Environment**: Persistent Vercel Production Deployment (`https://vit-lost-and-found-roan.vercel.app`) + Supabase Cloud (`ruvkhuocnixoouphosku.supabase.co`)  
+> **Repository**: [https://github.com/Ragi509/vit-lost-and-found](https://github.com/Ragi509/vit-lost-and-found)  
 > **Evaluation Criteria**: Every status is assigned based on direct, automated execution against the live running deployment.  
 
 ---
@@ -90,8 +91,8 @@
 
 | Feature | Status | Notes |
 | :--- | :---: | :--- |
-| **Production Frontend Server** | **Verified Working** | Running Next.js 14 production standalone build on port 3333. |
-| **Public HTTPS Edge Routing** | **Verified Working** | Cloudflare Tunnel serving `https://separate-drives-significantly-tiny.trycloudflare.com` via HTTP/2. |
+| **Persistent Vercel Production Deployment** | **Verified Working** | Live at `https://vit-lost-and-found-roan.vercel.app` running serverless Next.js 14 App Router. |
+| **Continuous Git Integration** | **Verified Working** | Synced with GitHub repository `https://github.com/Ragi509/vit-lost-and-found` (`main` branch) with automated deployment webhooks. |
 | **Managed Cloud Database** | **Verified Working** | Supabase PostgreSQL in `ap-south-1` Mumbai region with `pgvector` enabled. |
 | **Transactional Email Integration** | **Working With Caveat** | Connected to Resend API (`smtp.resend.com`); operating in sandbox mode pending custom domain DNS verification. |
 | **Embedding Service Microservice** | **Working With Caveat** | Hosted on Render free tier; fully operational with Bearer authentication, subject to initial cold-start delays if idle. |
