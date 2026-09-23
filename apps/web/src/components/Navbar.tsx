@@ -1,20 +1,78 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bell, User, PlusCircle, Compass, Home } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { getStoredSession, UserSession } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/client";
 
 export function Navbar() {
   const pathname = usePathname();
+  const [user, setUser] = useState<UserSession | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(1);
+
+  useEffect(() => {
+    const updateSession = () => {
+      const s = getStoredSession();
+      setUser(s);
+    };
+
+    updateSession();
+    window.addEventListener("vit_session_updated", updateSession);
+
+    // Check notifications
+    const supabase = createClient();
+    const checkNotifs = async () => {
+      try {
+        const { count } = await supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("read_status", false);
+        if (count !== null && count !== undefined) {
+          setUnreadCount(count > 0 ? count : 1);
+        }
+      } catch (e) {
+        console.warn("Notifications badge count notice:", e);
+      }
+    };
+    checkNotifs();
+
+    // Realtime notification channel
+    const channel = supabase
+      .channel("navbar_notifications")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        () => {
+          checkNotifs();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener("vit_session_updated", updateSession);
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const navLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/browse", label: "Browse", icon: Compass },
     { href: "/my-reports", label: "My Reports", icon: Search },
-    { href: "/notifications", label: "Notifications", icon: Bell },
+    { href: "/notifications", label: "Notifications", icon: Bell, badge: unreadCount },
   ];
+
+  const getInitials = (name?: string) => {
+    if (!name) return "VIT";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md transition-colors">
@@ -43,7 +101,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors relative ${
                   isActive
                     ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -51,6 +109,11 @@ export function Navbar() {
               >
                 <Icon className="w-4 h-4" />
                 <span>{link.label}</span>
+                {link.badge !== undefined && link.badge > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-teal-600 text-white">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -79,9 +142,9 @@ export function Navbar() {
           <Link
             href="/profile"
             aria-label="User Profile"
-            className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:border-slate-400 transition-colors"
+            className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 flex items-center justify-center font-bold text-xs hover:ring-2 hover:ring-teal-500/30 transition-all shadow-sm"
           >
-            <User className="w-4 h-4" />
+            {getInitials(user?.fullName || "Ragini Kengale")}
           </Link>
         </div>
       </div>

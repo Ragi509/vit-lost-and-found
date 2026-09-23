@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3333",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3333",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "bootstrap-admin": "tsx scripts/bootstrap-admin.ts"
@@ -23,6 +23,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.1",
+    "recharts": "^3.10.1",
     "tailwind-merge": "^2.5.4",
     "zod": "^3.23.8"
   },

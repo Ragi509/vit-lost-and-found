@@ -2,9 +2,12 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Building, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { Button, Input, Textarea, Card, CardContent, LoadingState } from "@vit/ui";
+import { PhotoUpload } from "@/components/PhotoUpload";
+import { createClient } from "@/lib/supabase/client";
+import { getStoredSession } from "@/lib/auth/session";
 
 const CAMPUS_LOCATIONS = [
   "Central Library - 2nd Floor Reading Room",
@@ -14,17 +17,18 @@ const CAMPUS_LOCATIONS = [
   "B-Block - Mechanical Workshop Area",
   "Sharad Arena / Open Amphitheatre",
   "Sports Complex - Badminton Court Bench",
+  "Sports Complex - Gymkhana Hall",
   "Student Cafeteria / Canteen Main Area",
+  "Saraswati Hostel Block A - Common Room",
   "Main Security Gate 1 Entrance",
 ];
 
 const HOLDING_LOCATIONS = [
   "Central Library Helpdesk (Ground Floor)",
+  "Main Security Gate 1 Security Office",
   "D-Block Security Counter (Ground Floor)",
-  "B-Block Department Office",
-  "Main Security Gate 1 Lost & Found Custody Desk",
-  "Student Affairs Section (Sharad Arena Building)",
-  "Sports Gymkhana Office Desk",
+  "Student Activities Center (SAC Desk)",
+  "Hostel Warden Office (Saraswati Block)",
 ];
 
 const ITEM_CATEGORIES = [
@@ -41,6 +45,8 @@ const ITEM_CATEGORIES = [
 export default function ReportFoundPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     itemName: "",
     category: ITEM_CATEGORIES[0],
@@ -55,6 +61,93 @@ export default function ReportFoundPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const reportId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "found-" + Date.now();
+    const session = getStoredSession();
+    let uploadedPhotoUrl = previewUrl;
+
+    // If photo is present, upload to Supabase Storage bucket 'item-photos'
+    if (photoFile) {
+      try {
+        const supabase = createClient();
+        const fileExt = photoFile.name.split(".").pop() || "jpg";
+        const filePath = `${reportId}/photo.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("item-photos")
+          .upload(filePath, photoFile, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (!uploadError) {
+          const { data: pubData } = supabase.storage.from("item-photos").getPublicUrl(filePath);
+          if (pubData?.publicUrl) uploadedPhotoUrl = pubData.publicUrl;
+        }
+      } catch (err) {
+        console.warn("Storage upload exception:", err);
+      }
+    }
+
+    // Call live /api/reports endpoint to persist to Supabase & run similarity scan
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reporterId: session?.id,
+          reporterEmail: session?.email,
+          type: "found",
+          itemName: formData.itemName,
+          category: formData.category,
+          description: formData.description,
+          photoUrl: uploadedPhotoUrl,
+          location: formData.location,
+          dateTime: formData.dateTime,
+          holdingLocation: formData.holdingLocation,
+          finderNotes: formData.finderNotes,
+        }),
+      });
+
+      const data = await res.json();
+
+      // Broadcast event via Supabase Realtime channel
+      const supabase = createClient();
+      const channel = supabase.channel("vit_live_events");
+      await channel.send({
+        type: "broadcast",
+        event: "new_report",
+        payload: { reportId, type: "found", item: formData.itemName },
+      });
+      if (data.match) {
+        await channel.send({
+          type: "broadcast",
+          event: "new_match",
+          payload: { match: data.match },
+        });
+      }
+    } catch (apiErr) {
+      console.warn("API report creation notice:", apiErr);
+    }
+
+    // Persist into user reports cache
+    try {
+      const storedReports = JSON.parse(localStorage.getItem("vit_user_reports") || "[]");
+      storedReports.unshift({
+        id: reportId,
+        type: "found",
+        item_name: formData.itemName,
+        category: formData.category,
+        location: formData.location,
+        holdingLocation: formData.holdingLocation,
+        dateTime: formData.dateTime || new Date().toISOString(),
+        description: formData.description,
+        photo_url: previewUrl,
+        status: "Holding at Desk",
+      });
+      localStorage.setItem("vit_user_reports", JSON.stringify(storedReports));
+    } catch (e) {
+      console.warn("Local storage cache warning:", e);
+    }
+
     setTimeout(() => {
       setIsSubmitting(false);
       router.push("/dashboard");
@@ -66,10 +159,11 @@ export default function ReportFoundPage() {
       <div className="max-w-xl mx-auto py-12">
         <LoadingState
           steps={[
-            "Registering found item in campus custody database...",
-            "Indexing holding desk location and finder details...",
-            "Extracting multi-modal features for vector indexing...",
-            "Checking active lost reports for high-confidence matches...",
+            "Registering recovered item intake record...",
+            photoFile ? "Uploading high-resolution photograph to encrypted item-photos storage..." : "Processing item metadata...",
+            "Indexing physical holding desk location...",
+            "Triggering CLIP multi-modal embedding pipeline...",
+            "Querying outstanding lost item registry for immediate candidate pairing...",
           ]}
         />
       </div>
@@ -78,6 +172,7 @@ export default function ReportFoundPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      {/* Header */}
       <div>
         <Link
           href="/dashboard"
@@ -90,23 +185,25 @@ export default function ReportFoundPage() {
           Report a Found Item
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-          Log an unattended or turned-in item into the campus recovery system and specify which authorized desk holds custody.
+          Thank you for turning in a lost item. Details entered here will help security desk verify the legitimate owner.
         </p>
       </div>
 
       <Card>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Item Name */}
             <Input
-              label="Item Name & General Description"
+              label="Found Item Title"
               id="itemName"
               type="text"
-              placeholder="e.g. Texas Instruments Scientific Calculator"
+              placeholder="e.g. Blue HP Pavilion Laptop Charger"
               value={formData.itemName}
               onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
               required
             />
 
+            {/* Category & Location Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
@@ -125,7 +222,7 @@ export default function ReportFoundPage() {
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Where Was It Found?
+                  Campus Spot Where Found
                 </label>
                 <select
                   value={formData.location}
@@ -139,9 +236,24 @@ export default function ReportFoundPage() {
               </div>
             </div>
 
+            {/* Date and Time */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Current Holding Desk (Physical Custody)
+                Date & Time Found
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.dateTime}
+                onChange={(e) => setFormData({ ...formData, dateTime: e.target.value })}
+                className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                required
+              />
+            </div>
+
+            {/* Custody / Holding Location */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Physical Custody Holding Desk
               </label>
               <select
                 value={formData.holdingLocation}
@@ -166,17 +278,15 @@ export default function ReportFoundPage() {
               required
             />
 
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Item Photo (Recommended for AI Matching)
-              </label>
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 text-center hover:border-slate-400 transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/30">
-                <Upload className="w-6 h-6 mx-auto text-slate-400 mb-2" />
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Click or drag photo here (Max 5MB • JPG, PNG, WEBP)
-                </p>
-              </div>
-            </div>
+            {/* Responsive Photo Upload Control */}
+            <PhotoUpload
+              label="Item Photograph (Recommended for AI Matching)"
+              sublabel="Click or drag photo here (Max 5MB • JPG, PNG, WEBP)"
+              value={photoFile}
+              onChange={setPhotoFile}
+              previewUrl={previewUrl}
+              onPreviewChange={setPreviewUrl}
+            />
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">

@@ -7,6 +7,7 @@ import { ArrowRight, Search, ShieldCheck, Sparkles, CheckCircle2, AlertCircle } 
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@vit/ui";
 import { Footer } from "@/components/Footer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { syncUserWithSupabase } from "@/lib/auth/session";
 
 export default function LandingLoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LandingLoginPage() {
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"email" | "otp">("email");
   const [error, setError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Domain-only validation: Must end in @vit.edu (allows student name+year as well as staff/faculty patterns)
@@ -25,6 +27,7 @@ export default function LandingLoginPage() {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInfoMessage(null);
 
     if (!email) {
       setError("Please enter your institutional email.");
@@ -39,11 +42,32 @@ export default function LandingLoginPage() {
     }
 
     setIsLoading(true);
-    // Simulate Supabase OTP dispatch
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
       setIsLoading(false);
-      setStep("otp");
-    }, 800);
+
+      if (res.ok && data.success) {
+        setStep("otp");
+        if (data.message) {
+          setInfoMessage(data.message);
+        }
+      } else {
+        // If Resend key is not wired yet, inform the user clearly while allowing fallback
+        if (data.error && data.error.includes("RESEND_API_KEY")) {
+          setError("Resend API Key is not yet configured. Please provide your Resend API key to enable live email delivery.");
+        } else {
+          setError(data.error || "Failed to dispatch verification email.");
+        }
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err.message || "Failed to connect to authentication service.");
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -56,11 +80,28 @@ export default function LandingLoginPage() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code: otp.trim() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || "Invalid verification code.");
+        setIsLoading(false);
+        return;
+      }
+
+      await syncUserWithSupabase(email);
       setIsLoading(false);
-      localStorage.setItem("vit_user_session", JSON.stringify({ email, role: "Student" }));
       router.push("/dashboard");
-    }, 600);
+    } catch (err: any) {
+      console.warn("User session sync error:", err);
+      setError("An error occurred during verification. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -143,6 +184,13 @@ export default function LandingLoginPage() {
                 </div>
               )}
 
+              {infoMessage && (
+                <div className="mb-4 p-3 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{infoMessage}</span>
+                </div>
+              )}
+
               {step === "email" ? (
                 <form onSubmit={handleSendOtp} className="space-y-4">
                   <Input
@@ -192,6 +240,16 @@ export default function LandingLoginPage() {
               )}
             </CardContent>
           </Card>
+
+          <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+            Campus security or custody desk?{" "}
+            <Link
+              href="/staff/login"
+              className="text-slate-700 dark:text-slate-300 hover:underline font-medium underline-offset-2"
+            >
+              Staff login
+            </Link>
+          </p>
         </div>
       </main>
 

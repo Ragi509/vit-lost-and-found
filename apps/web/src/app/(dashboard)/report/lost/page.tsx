@@ -2,9 +2,12 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Lock, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Lock, ShieldCheck, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { Button, Input, Textarea, Card, CardHeader, CardTitle, CardDescription, CardContent, LoadingState } from "@vit/ui";
+import { PhotoUpload } from "@/components/PhotoUpload";
+import { createClient } from "@/lib/supabase/client";
+import { getStoredSession } from "@/lib/auth/session";
 
 const CAMPUS_LOCATIONS = [
   "Central Library - 2nd Floor Reading Room",
@@ -34,6 +37,8 @@ const ITEM_CATEGORIES = [
 export default function ReportLostPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     itemName: "",
     category: ITEM_CATEGORIES[0],
@@ -47,11 +52,95 @@ export default function ReportLostPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Contextual loading flow
+    const reportId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "report-" + Date.now();
+    const session = getStoredSession();
+    let uploadedPhotoUrl = previewUrl;
+
+    // If a photo was selected, upload it to Supabase Storage bucket 'item-photos'
+    if (photoFile) {
+      try {
+        const supabase = createClient();
+        const fileExt = photoFile.name.split(".").pop() || "jpg";
+        const filePath = `${reportId}/photo.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("item-photos")
+          .upload(filePath, photoFile, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (!uploadError) {
+          const { data: pubData } = supabase.storage.from("item-photos").getPublicUrl(filePath);
+          if (pubData?.publicUrl) uploadedPhotoUrl = pubData.publicUrl;
+        }
+      } catch (err) {
+        console.warn("Storage upload exception:", err);
+      }
+    }
+
+    // Call live /api/reports endpoint to persist to Supabase & run pgvector similarity scan
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reporterId: session?.id,
+          reporterEmail: session?.email,
+          type: "lost",
+          itemName: formData.itemName,
+          category: formData.category,
+          description: formData.description,
+          photoUrl: uploadedPhotoUrl,
+          location: formData.location,
+          dateTime: formData.dateTime,
+          privateSecret: formData.privateSecret,
+        }),
+      });
+
+      const data = await res.json();
+
+      // Broadcast event via Supabase Realtime channel
+      const supabase = createClient();
+      const channel = supabase.channel("vit_live_events");
+      await channel.send({
+        type: "broadcast",
+        event: "new_report",
+        payload: { reportId, type: "lost", item: formData.itemName },
+      });
+      if (data.match) {
+        await channel.send({
+          type: "broadcast",
+          event: "new_match",
+          payload: { match: data.match },
+        });
+      }
+    } catch (apiErr) {
+      console.warn("API report creation notice:", apiErr);
+    }
+
+    // Persist recent submission into local session cache
+    try {
+      const storedReports = JSON.parse(localStorage.getItem("vit_user_reports") || "[]");
+      storedReports.unshift({
+        id: reportId,
+        type: "lost",
+        item_name: formData.itemName,
+        category: formData.category,
+        location: formData.location,
+        dateTime: formData.dateTime || new Date().toISOString(),
+        description: formData.description,
+        photo_url: previewUrl,
+        status: "Active",
+      });
+      localStorage.setItem("vit_user_reports", JSON.stringify(storedReports));
+    } catch (e) {
+      console.warn("Local storage cache warning:", e);
+    }
+
     setTimeout(() => {
       setIsSubmitting(false);
       router.push("/matches");
-    }, 2800);
+    }, 2400);
   };
 
   if (isSubmitting) {
@@ -61,6 +150,7 @@ export default function ReportLostPage() {
           steps={[
             "Recording your lost report securely in campus database...",
             "Encrypting private distinguishing details via pgcrypto...",
+            photoFile ? "Uploading item photograph to encrypted item-photos storage..." : "Processing visual attributes...",
             "Generating 384-dimensional semantic embedding vector...",
             "Running pgvector cosine similarity scan against found items...",
             "Aggregating potential matches across campus...",
@@ -160,18 +250,15 @@ export default function ReportLostPage() {
               required
             />
 
-            {/* Optional Photo Upload */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Reference Photograph (Optional)
-              </label>
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 text-center hover:border-slate-400 transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/30">
-                <Upload className="w-6 h-6 mx-auto text-slate-400 mb-2" />
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Upload an existing photo or catalog reference (Max 5MB • JPG, PNG, WEBP)
-                </p>
-              </div>
-            </div>
+            {/* Responsive Photo Upload Control */}
+            <PhotoUpload
+              label="Reference Photograph (Optional)"
+              sublabel="Upload an existing photo or catalog reference (Max 5MB • JPG, PNG, WEBP)"
+              value={photoFile}
+              onChange={setPhotoFile}
+              previewUrl={previewUrl}
+              onPreviewChange={setPreviewUrl}
+            />
 
             {/* High-Security Private Distinguishing Detail */}
             <div className="p-4 rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/40 dark:bg-teal-950/20 space-y-3">
