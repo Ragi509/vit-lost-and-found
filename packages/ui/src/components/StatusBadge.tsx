@@ -1,12 +1,14 @@
 import React from "react";
-import { Search, Sparkles, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Search, Sparkles, ShieldAlert, CheckCircle2, UserCheck } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export type ReportStatus =
   | "searching"
   | "matched"
   | "verification_required"
-  | "recovered";
+  | "recovered"
+  | "under_human_review"
+  | "escalated";
 
 interface StatusBadgeProps {
   status: ReportStatus;
@@ -36,6 +38,16 @@ const statusConfig: Record<
     label: "Recovered",
     icon: CheckCircle2,
     style: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
+  },
+  under_human_review: {
+    label: "Under Human Review",
+    icon: UserCheck,
+    style: "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800",
+  },
+  escalated: {
+    label: "Under Human Review",
+    icon: UserCheck,
+    style: "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800",
   },
 };
 

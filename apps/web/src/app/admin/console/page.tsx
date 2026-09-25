@@ -22,7 +22,8 @@ import {
   MapPin,
   CheckCircle,
   FileText,
-  AlertCircle
+  AlertCircle,
+  ShieldAlert
 } from "lucide-react";
 import {
   Button,
@@ -204,7 +205,33 @@ const INITIAL_INVITES: InviteRecord[] = [
   },
 ];
 
-type AdminNavTab = "claims" | "analytics" | "reports" | "invites";
+interface EscalatedCase {
+  id: string;
+  status: "pending" | "reviewing" | "resolved";
+  admin_notes?: string;
+  created_at: string;
+  resolved_at?: string;
+  student: {
+    id: string;
+    full_name: string;
+    vit_email: string;
+    id_number: string;
+  };
+  report: {
+    id: string;
+    item_name: string;
+    category: string;
+    description: string;
+    photo_url?: string;
+    location: string;
+    date_time: string;
+    holding_location?: string;
+    status: string;
+    created_at: string;
+  };
+}
+
+type AdminNavTab = "claims" | "escalations" | "analytics" | "reports" | "invites";
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>("claims");
@@ -214,6 +241,13 @@ export default function AdminConsolePage() {
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  // Security Desk Escalations state (US-7)
+  const [escalations, setEscalations] = useState<EscalatedCase[]>([]);
+  const [selectedEscalation, setSelectedEscalation] = useState<EscalatedCase | null>(null);
+  const [escalationFilter, setEscalationFilter] = useState<"pending" | "reviewing" | "resolved" | "all">("pending");
+  const [escalationNotes, setEscalationNotes] = useState("");
+  const [isUpdatingEscalation, setIsUpdatingEscalation] = useState(false);
 
   React.useEffect(() => {
     const staffCookie = typeof document !== "undefined" ? document.cookie.includes("vit_staff_session") : false;
@@ -259,6 +293,62 @@ export default function AdminConsolePage() {
     };
     fetchClaims();
   }, [claimFilter]);
+
+  const fetchEscalations = async () => {
+    try {
+      const res = await fetch(`/api/admin/escalations?status=${escalationFilter}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.escalations && Array.isArray(data.escalations)) {
+          setEscalations(data.escalations);
+          setSelectedEscalation((prev) => {
+            if (prev) {
+              const updated = data.escalations.find((e: any) => e.id === prev.id);
+              if (updated) return updated;
+            }
+            return data.escalations[0] || null;
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("Escalations fetch notice:", e);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchEscalations();
+  }, [escalationFilter, activeTab]);
+
+  React.useEffect(() => {
+    if (selectedEscalation) {
+      setEscalationNotes(selectedEscalation.admin_notes || "");
+    }
+  }, [selectedEscalation]);
+
+  const handleUpdateEscalation = async (status: "pending" | "reviewing" | "resolved") => {
+    if (!selectedEscalation) return;
+    setIsUpdatingEscalation(true);
+    try {
+      const res = await fetch("/api/admin/escalations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          escalationId: selectedEscalation.id,
+          status,
+          adminNotes: escalationNotes,
+        }),
+      });
+      if (res.ok) {
+        setActionMessage(`Escalation status updated to "${status}". Student notified.`);
+        setTimeout(() => setActionMessage(null), 4000);
+        await fetchEscalations();
+      }
+    } catch (e) {
+      console.warn("Escalation update error:", e);
+    } finally {
+      setIsUpdatingEscalation(false);
+    }
+  };
 
   // Reports state
   const [reports, setReports] = useState<CampusReportRecord[]>(INITIAL_REPORTS);
@@ -422,6 +512,31 @@ export default function AdminConsolePage() {
                     }`}
                   >
                     {pendingCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("escalations")}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                  activeTab === "escalations"
+                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShieldAlert className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <span>Security Escalations</span>
+                </div>
+                {escalations.filter((e) => e.status !== "resolved").length > 0 && (
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                      activeTab === "escalations"
+                        ? "bg-purple-400 text-slate-950"
+                        : "bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300"
+                    }`}
+                  >
+                    {escalations.filter((e) => e.status !== "resolved").length}
                   </span>
                 )}
               </button>
@@ -746,7 +861,248 @@ export default function AdminConsolePage() {
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 2: ANALYTICS (Matches Resolved Last 30 Days + Category Breakdown)      */}
+          {/* TAB 2: SECURITY ESCALATIONS WORKLIST (US-7 Security Desk Integration)      */}
+          {/* ========================================================================= */}
+          {activeTab === "escalations" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column: Escalations Queue Worklist */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-300 dark:border-slate-800">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Security Escalations Queue ({escalations.length})
+                  </span>
+                  <span className="text-[11px] text-slate-500">Unmatched Lost Reports</span>
+                </div>
+
+                {/* Filter Selector (Pending vs Reviewing vs Resolved vs All) */}
+                <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-semibold">
+                  {(["pending", "reviewing", "resolved", "all"] as const).map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => setEscalationFilter(filter)}
+                      className={`flex-1 py-1 px-1.5 rounded capitalize transition-colors text-center ${
+                        escalationFilter === filter
+                          ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm font-bold"
+                          : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+
+                {escalations.length === 0 ? (
+                  <div className="p-8 text-center border border-dashed border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-xs text-slate-500">
+                    No escalated cases found under &ldquo;{escalationFilter}&rdquo; status.
+                  </div>
+                ) : (
+                  escalations.map((esc) => (
+                    <div
+                      key={esc.id}
+                      onClick={() => setSelectedEscalation(esc)}
+                      className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${
+                        selectedEscalation?.id === esc.id
+                          ? "border-purple-600 dark:border-purple-500 bg-purple-50/40 dark:bg-purple-950/20 shadow-sm"
+                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
+                          {esc.report?.item_name || "Unmatched Campus Item"}
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${
+                            esc.status === "pending"
+                              ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                              : esc.status === "reviewing"
+                              ? "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                              : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                          }`}
+                        >
+                          {esc.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500">
+                        <span>{esc.report?.category || "Belongings"}</span>
+                        <span>•</span>
+                        <span>{esc.student?.full_name || "Student"}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+                        <span>Submitted: {new Date(esc.created_at).toLocaleDateString()}</span>
+                        <span>{esc.report?.location}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Right Column: Detailed Escalation Inspection & Officer Resolution */}
+              <div className="lg:col-span-2">
+                {selectedEscalation ? (
+                  <Card className="border-slate-300 dark:border-slate-800 shadow-sm">
+                    <CardHeader className="pb-3 border-b border-slate-200 dark:border-slate-800 flex flex-row items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
+                            {selectedEscalation.report?.item_name}
+                          </CardTitle>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              selectedEscalation.status === "pending"
+                                ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300"
+                                : selectedEscalation.status === "reviewing"
+                                ? "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300"
+                                : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+                            }`}
+                          >
+                            {selectedEscalation.status}
+                          </span>
+                        </div>
+                        <CardDescription className="text-xs mt-0.5">
+                          Escalation ID: <span className="font-mono">{selectedEscalation.id}</span> • Category: {selectedEscalation.report?.category}
+                        </CardDescription>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="p-6 space-y-6 text-xs">
+                      {/* Section 1: Student Institutional Contact Information */}
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+                        <span className="font-bold uppercase tracking-wider text-[10px] text-slate-500">
+                          Student Contact Information
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Full Name</span>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">
+                              {selectedEscalation.student?.full_name || "VIT Student"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Institutional Email</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-100">
+                              {selectedEscalation.student?.vit_email || "student@vit.edu"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Student PRN / ID</span>
+                            <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                              {selectedEscalation.student?.id_number || "PRN-2410892"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Submitted Report Evidence Details */}
+                      <div className="space-y-3">
+                        <span className="font-bold uppercase tracking-wider text-[10px] text-slate-500">
+                          Report Details Submitted by Student
+                        </span>
+                        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Item Description</span>
+                            <p className="text-slate-800 dark:text-slate-200 text-xs mt-0.5">
+                              {selectedEscalation.report?.description || "No extended description provided."}
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Reported Loss Location</span>
+                              <span className="font-medium text-slate-800 dark:text-slate-200">
+                                {selectedEscalation.report?.location}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Reported Incident Date & Time</span>
+                              <span className="font-medium text-slate-800 dark:text-slate-200">
+                                {selectedEscalation.report?.date_time ? new Date(selectedEscalation.report.date_time).toLocaleString() : "Recently"}
+                              </span>
+                            </div>
+                          </div>
+                          {selectedEscalation.report?.photo_url && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                              <span className="text-[10px] text-slate-400 block mb-1">Attached Photo Evidence</span>
+                              <img
+                                src={selectedEscalation.report.photo_url}
+                                alt="Report Attachment"
+                                className="w-32 h-32 object-cover rounded-lg border border-slate-300 dark:border-slate-700"
+                              />
+                            </div>
+                          )}
+                          <div className="p-2.5 rounded bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-[11px] text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>Private distinguishing detail remains encrypted; this is an unmatched lost case undergoing manual physical verification.</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 3: Officer Operational Resolution Workstation */}
+                      <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/30 dark:bg-purple-950/10 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold uppercase tracking-wider text-[10px] text-purple-900 dark:text-purple-300">
+                            Security Desk Case Actions
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            Updating status automatically notifies the student
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Officer Operational Notes (visible to student upon resolution):
+                          </label>
+                          <Textarea
+                            placeholder="e.g., Checked physical locker 4B at Central Security. Item retrieved from Ground Floor staff room; student instructed to visit desk with PRN card..."
+                            value={escalationNotes}
+                            onChange={(e) => setEscalationNotes(e.target.value)}
+                            className="bg-white dark:bg-slate-900"
+                            rows={3}
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-purple-200 dark:border-purple-900/40">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUpdateEscalation("pending")}
+                            disabled={isUpdatingEscalation || selectedEscalation.status === "pending"}
+                          >
+                            Mark Pending
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUpdateEscalation("reviewing")}
+                            disabled={isUpdatingEscalation || selectedEscalation.status === "reviewing"}
+                            className="border-blue-400 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300"
+                          >
+                            Mark In Review
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleUpdateEscalation("resolved")}
+                            disabled={isUpdatingEscalation || selectedEscalation.status === "resolved"}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          >
+                            <Check className="w-3.5 h-3.5 mr-1" />
+                            <span>Mark Resolved</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="p-12 text-center border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-xs text-slate-500">
+                    Select an escalated report from the worklist to view details and adjudicate.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 3: ANALYTICS (Matches Resolved Last 30 Days + Category Breakdown)      */}
           {/* ========================================================================= */}
           {activeTab === "analytics" && (
             <div className="space-y-6">

@@ -84,6 +84,19 @@ export default function BrowsePage() {
   const fetchLiveReports = async () => {
     setIsLoading(true);
     try {
+      let escalationsMap: Record<string, boolean> = {};
+      try {
+        const escRes = await fetch("/api/escalations");
+        if (escRes.ok) {
+          const escData = await escRes.json();
+          if (escData.escalations && Array.isArray(escData.escalations)) {
+            escData.escalations.forEach((e: any) => {
+              escalationsMap[e.report_id] = true;
+            });
+          }
+        }
+      } catch (e) {}
+
       const res = await fetch("/api/reports");
       if (res.ok) {
         const data = await res.json();
@@ -95,7 +108,7 @@ export default function BrowsePage() {
             type: r.type,
             location: r.location,
             date: r.date_time ? new Date(r.date_time).toLocaleDateString() : "Recently",
-            status: r.status as any,
+            status: escalationsMap[r.id] ? ("under_human_review" as any) : (r.status as any),
             holdingLocation: r.holding_location,
             description: r.description,
             photoUrl: r.photo_url,

@@ -23,6 +23,19 @@ export default function UserDashboard() {
   const [recoveredCount, setRecoveredCount] = useState(0);
   const [matchAlert, setMatchAlert] = useState<MatchAlert | null>(null);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const [activeReportInfo, setActiveReportInfo] = useState<{
+    id: string;
+    name: string;
+    location: string;
+    status: "searching" | "matched" | "verification_required" | "recovered" | "under_human_review";
+    isEscalated: boolean;
+  }>({
+    id: "rep-001",
+    name: "TI-84 Plus CE Graphing Calculator",
+    location: "D-Block, 3rd Floor Computer Lab 304",
+    status: "matched",
+    isEscalated: false,
+  });
 
   useEffect(() => {
     // 1. Resolve user identity from session
@@ -79,6 +92,34 @@ export default function UserDashboard() {
             approximate_label: `~${pct}% match`,
             lost_item_name: "TI-84 Plus CE Graphing Calculator",
           });
+        }
+
+        // Check user's active report and escalation
+        const currentSession = getStoredSession();
+        if (currentSession?.id) {
+          const userRepRes = await fetch(`/api/reports?reporterId=${currentSession.id}`);
+          if (userRepRes.ok) {
+            const repData = await userRepRes.json();
+            if (repData.reports && repData.reports.length > 0) {
+              const latestRep = repData.reports[0];
+              let isEsc = false;
+              try {
+                const escRes = await fetch(`/api/escalations?reportId=${latestRep.id}`);
+                if (escRes.ok) {
+                  const escData = await escRes.json();
+                  if (escData.escalation) isEsc = true;
+                }
+              } catch (e) {}
+
+              setActiveReportInfo({
+                id: latestRep.id,
+                name: latestRep.item_name,
+                location: latestRep.location,
+                status: isEsc ? "under_human_review" : (latestRep.status as any),
+                isEscalated: isEsc,
+              });
+            }
+          }
         }
       } catch (err) {
         console.warn("Live metric fetch notice:", err);
@@ -245,26 +286,38 @@ export default function UserDashboard() {
           <CardHeader className="pb-3 border-b border-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-base">TI-84 Plus CE Graphing Calculator</CardTitle>
+                <CardTitle className="text-base">{activeReportInfo.name}</CardTitle>
                 <CardDescription className="text-xs mt-0.5">
-                  Reported lost at D-Block, 3rd Floor Computer Lab 304
+                  Reported lost at {activeReportInfo.location}
                 </CardDescription>
               </div>
-              <StatusBadge status="matched" />
+              <StatusBadge status={activeReportInfo.status} />
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <StepIndicator currentStep="match" className="max-w-xl mx-auto" />
+            <StepIndicator currentStep={activeReportInfo.isEscalated ? "verify" : "match"} className="max-w-xl mx-auto" />
             <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-teal-600" />
-                <span>Next step: Review candidate match and submit blind ownership proof</span>
+                <span>
+                  {activeReportInfo.isEscalated
+                    ? "Next step: Campus security desk is manually reviewing physical logs and custody"
+                    : "Next step: Review candidate match and submit blind ownership proof"}
+                </span>
               </div>
-              <Link href={`/matches/${matchAlert?.match_id || "match-001"}`}>
-                <Button variant="outline" size="sm">
-                  <span>View Match Comparison</span>
-                </Button>
-              </Link>
+              {activeReportInfo.isEscalated ? (
+                <Link href="/my-reports">
+                  <Button variant="outline" size="sm">
+                    <span>View Escalation Status</span>
+                  </Button>
+                </Link>
+              ) : (
+                <Link href={`/matches/${matchAlert?.match_id || "match-001"}`}>
+                  <Button variant="outline" size="sm">
+                    <span>View Match Comparison</span>
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>
