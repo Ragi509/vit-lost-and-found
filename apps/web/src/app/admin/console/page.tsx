@@ -210,6 +210,7 @@ export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>("claims");
   const [claims, setClaims] = useState<PendingClaim[]>([]);
   const [selectedClaim, setSelectedClaim] = useState<PendingClaim | null>(null);
+  const [claimFilter, setClaimFilter] = useState<"escalated" | "rejected" | "all">("escalated");
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -224,15 +225,28 @@ export default function AdminConsolePage() {
 
     const fetchClaims = async () => {
       try {
-        const res = await fetch("/api/admin/claims");
+        const res = await fetch(`/api/admin/claims?status=${claimFilter}`);
         if (res.ok) {
           const data = await res.json();
           if (data.claims && Array.isArray(data.claims) && data.claims.length > 0) {
-            setClaims(data.claims);
-            setSelectedClaim(data.claims[0]);
+            const mapped: PendingClaim[] = data.claims.map((c: any) => ({
+              id: c.id,
+              item_name: c.match?.lost_report?.item_name || c.match?.found_report?.item_name || "Campus Item",
+              category: c.match?.lost_report?.category || "Belongings",
+              location: c.match?.lost_report?.location || "Campus Facility",
+              claimant_name: c.claimant?.full_name ? `${c.claimant.full_name} (${c.claimant.id_number || 'Student'})` : "VIT Student",
+              claimant_email: c.claimant?.vit_email || "student@vit.edu",
+              claimant_statement: c.claimant_statement || "Submitted private detail for blind verification.",
+              finder_statement: c.match?.found_report?.description || "Turned in to custody desk.",
+              similarity_score: c.similarity_score || 0.64,
+              holding_location: c.match?.found_report?.holding_location || "Central Security Desk",
+              reason_for_escalation: c.result === "rejected" ? `Failed verification (<50% similarity: ~${Math.round((c.similarity_score || 0) * 100)}%) - Recorded in Audit Log` : (c.reason_for_escalation || "Similarity score in borderline range"),
+            }));
+            setClaims(mapped);
+            setSelectedClaim(mapped[0]);
           } else {
-            setClaims(INITIAL_CLAIMS);
-            setSelectedClaim(INITIAL_CLAIMS[0]);
+            setClaims(claimFilter === "escalated" ? INITIAL_CLAIMS : []);
+            setSelectedClaim(claimFilter === "escalated" ? INITIAL_CLAIMS[0] : null);
           }
         } else {
           setClaims(INITIAL_CLAIMS);
@@ -244,7 +258,7 @@ export default function AdminConsolePage() {
       }
     };
     fetchClaims();
-  }, []);
+  }, [claimFilter]);
 
   // Reports state
   const [reports, setReports] = useState<CampusReportRecord[]>(INITIAL_REPORTS);
@@ -535,6 +549,43 @@ export default function AdminConsolePage() {
                     Adjudication Queue ({claims.length})
                   </span>
                   <span className="text-[11px] text-slate-500">Confidence 40-70% / Multiple Claims</span>
+                </div>
+
+                {/* Filter Selector (Escalated vs Rejected Audit Log) */}
+                <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setClaimFilter("escalated")}
+                    className={`flex-1 py-1 px-1.5 rounded transition-colors text-center ${
+                      claimFilter === "escalated"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    Escalated
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClaimFilter("rejected")}
+                    className={`flex-1 py-1 px-1.5 rounded transition-colors text-center ${
+                      claimFilter === "rejected"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    Rejected Audit Log
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClaimFilter("all")}
+                    className={`flex-1 py-1 px-1.5 rounded transition-colors text-center ${
+                      claimFilter === "all"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    All
+                  </button>
                 </div>
 
                 {claims.length === 0 ? (

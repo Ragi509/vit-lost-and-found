@@ -3,12 +3,13 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = createAdminClient();
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status") || "escalated";
 
-    // Query pending verifications and borderline matches
-    const { data: claims, error } = await supabase
+    let query = supabase
       .from("verifications")
       .select(`
         id,
@@ -24,9 +25,13 @@ export async function GET() {
           found_report:reports!matches_found_report_id_fkey(id, item_name, category, location, description, holding_location)
         )
       `)
-      .eq("result", "escalated")
       .order("created_at", { ascending: false });
 
+    if (status !== "all") {
+      query = query.eq("result", status);
+    }
+
+    const { data: claims, error } = await query;
     if (error) {
       console.error("GET /api/admin/claims error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });

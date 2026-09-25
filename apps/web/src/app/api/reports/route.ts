@@ -165,24 +165,62 @@ export async function POST(request: Request) {
             // Update reports status to 'matched'
             await supabase.from("reports").update({ status: "matched" }).in("id", [lostId, foundId]);
 
-            // Insert real notification for the lost report owner
-            const notifId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "notif-" + Date.now();
-            const { data: notifRecord } = await supabase
+            // Check for an existing unread match notification within recent window (15 mins) to group alerts
+            const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+            const { data: recentNotif } = await supabase
               .from("notifications")
-              .insert({
-                id: notifId,
-                user_id: lostOwnerId,
-                type: "match",
-                title: `New Match Detected (${matchScore.approximate_label})`,
-                body: `A candidate for your report "${itemName}" has been identified on campus.`,
-                data: { match_id: matchId, report_id: reportId },
-                read: false,
-              })
-              .select()
-              .single();
+              .select("*")
+              .eq("user_id", lostOwnerId)
+              .eq("type", "match")
+              .eq("read", false)
+              .gte("created_at", fifteenMinsAgo)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
 
-            createdNotification = notifRecord;
-            break; // Matched primary candidate
+            if (recentNotif) {
+              const currentCount = (recentNotif.data?.count as number) || 1;
+              const newCount = currentCount + 1;
+              const existingMatchIds = recentNotif.data?.match_ids || (recentNotif.data?.match_id ? [recentNotif.data.match_id] : []);
+              
+              const { data: updatedNotif } = await supabase
+                .from("notifications")
+                .update({
+                  title: `Multiple Matches Detected (${newCount} Candidates)`,
+                  body: `You have ${newCount} potential matches identified across campus for your lost reports.`,
+                  data: {
+                    ...recentNotif.data,
+                    count: newCount,
+                    match_ids: [...existingMatchIds, matchId],
+                    match_id: matchId,
+                  },
+                  created_at: new Date().toISOString(),
+                })
+                .eq("id", recentNotif.id)
+                .select()
+                .single();
+
+              createdNotification = updatedNotif || recentNotif;
+            } else {
+              // Insert single new notification for the lost report owner
+              const notifId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "notif-" + Date.now();
+              const { data: notifRecord } = await supabase
+                .from("notifications")
+                .insert({
+                  id: notifId,
+                  user_id: lostOwnerId,
+                  type: "match",
+                  title: `New Match Detected (${matchScore.approximate_label})`,
+                  body: `A candidate for your report "${itemName}" has been identified on campus.`,
+                  data: { match_id: matchId, report_id: reportId, count: 1 },
+                  read: false,
+                })
+                .select()
+                .single();
+
+              createdNotification = notifRecord;
+            }
+            break; // Matched candidate
           }
         }
       }

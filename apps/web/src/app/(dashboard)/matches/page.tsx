@@ -63,24 +63,26 @@ export default function MatchesListPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.matches && data.matches.length > 0) {
-          const formatted: MatchItem[] = data.matches.map((m: any) => ({
-            id: m.id,
-            found_item_name: m.found_report?.item_name || "Recovered Campus Item",
-            category: m.found_report?.category || "Belongings",
-            location: m.found_report?.location || "Campus Facility",
-            date_found: m.found_report?.date_time ? new Date(m.found_report.date_time).toLocaleDateString() : "Recently",
-            holding_location: m.found_report?.holding_location || "Central Security Desk",
-            confidence_score: Number(m.confidence_score),
-            text_score: Number(m.text_score),
-            image_score: m.image_score ? Number(m.image_score) : undefined,
-            category_score: Number(m.category_score),
-            photo_url: m.found_report?.photo_url,
-          }));
+          const formatted: MatchItem[] = data.matches
+            .filter((m: any) => Number(m.confidence_score) >= 0.40)
+            .map((m: any) => ({
+              id: m.id,
+              found_item_name: m.found_report?.item_name || "Recovered Campus Item",
+              category: m.found_report?.category || "Belongings",
+              location: m.found_report?.location || "Campus Facility",
+              date_found: m.found_report?.date_time ? new Date(m.found_report.date_time).toLocaleDateString() : "Recently",
+              holding_location: m.found_report?.holding_location || "Central Security Desk",
+              confidence_score: Number(m.confidence_score),
+              text_score: Number(m.text_score),
+              image_score: m.image_score ? Number(m.image_score) : undefined,
+              category_score: Number(m.category_score),
+              photo_url: m.found_report?.photo_url,
+            }));
 
-          // Merge without duplicates
+          // Merge without duplicates and sort highest-confidence-first
           setMatches((prev) => {
             const existingIds = new Set(formatted.map((f) => f.id));
-            const merged = [...formatted, ...prev.filter((p) => !existingIds.has(p.id))];
+            const merged = [...formatted, ...prev.filter((p) => !existingIds.has(p.id) && p.confidence_score >= 0.40)];
             return merged.sort((a, b) => b.confidence_score - a.confidence_score);
           });
         }
