@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyOtpCode } from "@/lib/auth/otp-store";
 import { parseVitEmail } from "@/lib/auth/session";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,39 @@ export async function POST(request: Request) {
     const cleanEmail = email.trim().toLowerCase();
     const parsed = parseVitEmail(cleanEmail);
 
+    // Resolve or provision real UUID from public.users table
+    let userId = "a1111111-1111-1111-1111-111111111111"; // Fallback seed student
+    try {
+      const supabase = createAdminClient();
+      const { data: userRec } = await supabase
+        .from("users")
+        .select("id")
+        .eq("vit_email", cleanEmail)
+        .maybeSingle();
+
+      if (userRec?.id) {
+        userId = userRec.id;
+      } else {
+        const { data: newUser } = await supabase
+          .from("users")
+          .insert({
+            vit_email: cleanEmail,
+            full_name: parsed.fullName,
+            role: parsed.role,
+            id_number: parsed.prn,
+          })
+          .select("id")
+          .single();
+        if (newUser?.id) {
+          userId = newUser.id;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("User lookup in verify-otp notice:", dbErr);
+    }
+
     const session = {
-      id: "user-" + Math.random().toString(36).substring(2, 9),
+      id: userId,
       email: cleanEmail,
       fullName: parsed.fullName,
       role: parsed.role,

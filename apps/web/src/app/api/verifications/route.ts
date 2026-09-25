@@ -42,16 +42,24 @@ export async function POST(request: Request) {
     }
 
     // 2. Insert verification record into public.verifications
-    const verificationId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "verif-" + Date.now();
-    const validClaimantId = claimantId || "a1111111-1111-1111-1111-111111111111";
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validClaimantId = claimantId && isUuid.test(claimantId) ? claimantId : "a1111111-1111-1111-1111-111111111111";
 
-    await supabase.from("verifications").insert({
-      id: verificationId,
-      match_id: matchId,
-      claimant_id: validClaimantId,
-      similarity_score: similarity,
-      result,
-    });
+    const { data: verifRow, error: insertError } = await supabase
+      .from("verifications")
+      .insert({
+        match_id: matchId,
+        claimant_id: validClaimantId,
+        similarity_score: similarity,
+        result,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Error inserting verification record:", insertError);
+    }
+    const verificationId = verifRow?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "verif-id");
 
     // 3. If approved, transition report status to 'recovered'
     if (result === "approved") {

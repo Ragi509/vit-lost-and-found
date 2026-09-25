@@ -60,8 +60,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required report fields" }, { status: 400 });
     }
 
-    // 1. Ensure reporter user exists in public.users
-    let validUserId = reporterId;
+    // 1. Ensure reporter user exists in public.users with genuine UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let validUserId = reporterId && isUuid.test(reporterId) ? reporterId : null;
     if (!validUserId) {
       const email = reporterEmail || "ragini.kengale24@vit.edu";
       const { data: userRecord } = await supabase
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
         .eq("vit_email", email)
         .maybeSingle();
 
-      if (userRecord) {
+      if (userRecord?.id) {
         validUserId = userRecord.id;
       } else {
         validUserId = "a1111111-1111-1111-1111-111111111111"; // Fallback to primary seed user
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Insert report into public.reports
-    const reportId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "rep-" + Date.now();
+    const reportId = crypto.randomUUID();
     const { data: newReport, error: insertError } = await supabase
       .from("reports")
       .insert({
@@ -143,7 +144,7 @@ export async function POST(request: Request) {
           const lostOwnerId = type === "lost" ? validUserId : candidate.reporter_id;
 
           // Insert into public.matches
-          const matchId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "match-" + Date.now();
+          const matchId = crypto.randomUUID();
           const { data: matchRecord, error: matchError } = await supabase
             .from("matches")
             .insert({
@@ -203,7 +204,7 @@ export async function POST(request: Request) {
               createdNotification = updatedNotif || recentNotif;
             } else {
               // Insert single new notification for the lost report owner
-              const notifId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "notif-" + Date.now();
+              const notifId = crypto.randomUUID();
               const { data: notifRecord } = await supabase
                 .from("notifications")
                 .insert({
