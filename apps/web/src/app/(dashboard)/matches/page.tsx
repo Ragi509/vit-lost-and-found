@@ -23,46 +23,19 @@ interface MatchItem {
   is_new?: boolean;
 }
 
-const DEFAULT_MATCHES: MatchItem[] = [
-  {
-    id: "match-001",
-    found_item_name: "Texas Instruments Graphing Calculator",
-    category: "Academic Tools & Calculators",
-    location: "D-Block, Computer Lab 304",
-    date_found: "Yesterday, 4:15 PM",
-    holding_location: "D-Block Security Counter (Ground Floor)",
-    confidence_score: 0.91,
-    text_score: 0.91,
-    image_score: 0.88,
-    category_score: 1.0,
-    photo_placeholder_bg: "bg-slate-800 text-slate-200",
-  },
-  {
-    id: "match-002",
-    found_item_name: "Casio fx-991EX Scientific Calculator",
-    category: "Academic Tools & Calculators",
-    location: "Central Library - 2nd Floor",
-    date_found: "2 days ago",
-    holding_location: "Central Library Helpdesk",
-    confidence_score: 0.54,
-    text_score: 0.58,
-    image_score: 0.42,
-    category_score: 1.0,
-    photo_placeholder_bg: "bg-slate-700 text-slate-200",
-  },
-];
-
 export default function MatchesListPage() {
-  const [matches, setMatches] = useState<MatchItem[]>(DEFAULT_MATCHES);
+  const [matches, setMatches] = useState<MatchItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
 
   const fetchLiveMatches = async () => {
     try {
-      const res = await fetch("/api/matches");
+      const session = getStoredSession();
+      const userParam = session?.id ? `?userId=${session.id}` : "";
+      const res = await fetch(`/api/matches${userParam}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.matches && data.matches.length > 0) {
+        if (data.matches && Array.isArray(data.matches)) {
           const formatted: MatchItem[] = data.matches
             .filter((m: any) => Number(m.confidence_score) >= 0.40)
             .map((m: any) => ({
@@ -79,16 +52,14 @@ export default function MatchesListPage() {
               photo_url: m.found_report?.photo_url,
             }));
 
-          // Merge without duplicates and sort highest-confidence-first
-          setMatches((prev) => {
-            const existingIds = new Set(formatted.map((f) => f.id));
-            const merged = [...formatted, ...prev.filter((p) => !existingIds.has(p.id) && p.confidence_score >= 0.40)];
-            return merged.sort((a, b) => b.confidence_score - a.confidence_score);
-          });
+          setMatches(formatted.sort((a, b) => b.confidence_score - a.confidence_score));
+        } else {
+          setMatches([]);
         }
       }
     } catch (e) {
       console.warn("Matches fetch notice:", e);
+      setMatches([]);
     }
   };
 

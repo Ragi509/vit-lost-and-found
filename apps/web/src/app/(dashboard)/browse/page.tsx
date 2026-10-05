@@ -18,64 +18,8 @@ interface CatalogItem {
   photoUrl?: string | null;
 }
 
-const DEFAULT_ITEMS: CatalogItem[] = [
-  {
-    id: "item-001",
-    name: "TI-84 Plus CE Graphing Calculator",
-    category: "Academic Tools & Calculators",
-    type: "lost",
-    location: "D-Block, Computer Lab 304",
-    date: "Yesterday",
-    status: "matched",
-    description: "Black Texas Instruments graphing calculator left on a desk after Advanced Mathematics lecture.",
-  },
-  {
-    id: "item-002",
-    name: "Texas Instruments Graphing Calculator",
-    category: "Academic Tools & Calculators",
-    type: "found",
-    location: "D-Block, Computer Lab 304",
-    date: "Yesterday",
-    status: "matched",
-    holdingLocation: "D-Block Security Counter",
-    description: "Found on desk 14 after afternoon practical session. Screen in good condition.",
-  },
-  {
-    id: "item-003",
-    name: "Apple AirPods Pro Gen 2",
-    category: "Electronics & Audio",
-    type: "lost",
-    location: "Central Library - 2nd Floor",
-    date: "2 days ago",
-    status: "searching",
-    description: "AirPods Pro wireless earbuds inside a matte black Spigen rugged case with carabiner clip.",
-  },
-  {
-    id: "item-004",
-    name: "Decathlon 1L Stainless Steel Bottle",
-    category: "Accessories",
-    type: "found",
-    location: "Sports Complex - Badminton Bench",
-    date: "3 hours ago",
-    status: "searching",
-    holdingLocation: "Sports Gymkhana Office Desk",
-    description: "Matte blue metal water bottle found on the bench beside outdoor badminton court.",
-  },
-  {
-    id: "item-005",
-    name: "VIT Student RFID ID Card (GR: 12110456)",
-    category: "Identity Cards & Campus Keys",
-    type: "found",
-    location: "Student Cafeteria Main Area",
-    date: "Today, 11:30 AM",
-    status: "verification_required",
-    holdingLocation: "Main Security Gate 1",
-    description: "Turned in by canteen staff. Student name: Riya Sharma (Electronics).",
-  },
-];
-
 export default function BrowsePage() {
-  const [items, setItems] = useState<CatalogItem[]>(DEFAULT_ITEMS);
+  const [items, setItems] = useState<CatalogItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "lost" | "found">("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -100,7 +44,7 @@ export default function BrowsePage() {
       const res = await fetch("/api/reports");
       if (res.ok) {
         const data = await res.json();
-        if (data.reports && data.reports.length > 0) {
+        if (data.reports && Array.isArray(data.reports)) {
           const liveFormatted: CatalogItem[] = data.reports.map((r: any) => ({
             id: r.id,
             name: r.item_name,
@@ -114,14 +58,14 @@ export default function BrowsePage() {
             photoUrl: r.photo_url,
           }));
 
-          setItems((prev) => {
-            const ids = new Set(liveFormatted.map((f) => f.id));
-            return [...liveFormatted, ...prev.filter((p) => !ids.has(p.id))];
-          });
+          setItems(liveFormatted);
+        } else {
+          setItems([]);
         }
       }
     } catch (e) {
       console.warn("Live reports fetch notice:", e);
+      setItems([]);
     } finally {
       setIsLoading(false);
     }

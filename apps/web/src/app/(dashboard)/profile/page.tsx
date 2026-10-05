@@ -14,6 +14,9 @@ export default function ProfilePage() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+  const [userReportCount, setUserReportCount] = useState<number>(0);
+  const [userRecoveredCount, setUserRecoveredCount] = useState<number>(0);
+
   useEffect(() => {
     const session = getStoredSession();
     if (session) {
@@ -36,6 +39,24 @@ export default function ProfilePage() {
         });
     }
   }, []);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const fetchUserStats = async () => {
+      try {
+        const res = await fetch(`/api/reports?userId=${profile.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          const userReports = data.reports || [];
+          setUserReportCount(userReports.filter((r: any) => r.status !== "recovered").length);
+          setUserRecoveredCount(userReports.filter((r: any) => r.status === "recovered").length);
+        }
+      } catch (e) {
+        console.warn("User stats fetch notice:", e);
+      }
+    };
+    fetchUserStats();
+  }, [profile?.id]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,7 +231,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <span className="text-xs text-muted-foreground font-medium">Active Submissions</span>
-            <h4 className="text-xl font-bold text-foreground">1 report</h4>
+            <h4 className="text-xl font-bold text-foreground">{userReportCount} {userReportCount === 1 ? 'report' : 'reports'}</h4>
           </div>
         </Card>
 
@@ -220,7 +241,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <span className="text-xs text-muted-foreground font-medium">Belongings Recovered</span>
-            <h4 className="text-xl font-bold text-foreground">42 items returned</h4>
+            <h4 className="text-xl font-bold text-foreground">{userRecoveredCount} {userRecoveredCount === 1 ? 'item returned' : 'items returned'}</h4>
           </div>
         </Card>
       </div>

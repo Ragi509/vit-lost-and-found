@@ -66,35 +66,6 @@ interface PendingClaim {
   reason_for_escalation: string;
 }
 
-const INITIAL_CLAIMS: PendingClaim[] = [
-  {
-    id: "claim-101",
-    item_name: "Casio fx-991EX ClassWiz Calculator",
-    category: "Academic Tools & Calculators",
-    location: "Central Library - 2nd Floor Reading Room",
-    claimant_name: "Neha Patil (PRN-2310114)",
-    claimant_email: "neha.patil23@vit.edu",
-    claimant_statement: "Has a black protective slide cover, battery was replaced last month with Maxell coin cell.",
-    finder_statement: "Found on study desk 8 in reading room. Slide cover is attached.",
-    similarity_score: 0.64,
-    holding_location: "Central Library Helpdesk",
-    reason_for_escalation: "Similarity score in borderline range (64%)",
-  },
-  {
-    id: "claim-102",
-    item_name: "VIT RFID Student Card",
-    category: "Identity Cards & Campus Keys",
-    location: "Student Cafeteria",
-    claimant_name: "Riya Sharma (PRN-2210891)",
-    claimant_email: "riya.sharma22@vit.edu",
-    claimant_statement: "Name: Riya Sharma, GR number 12110456, Electronics branch.",
-    finder_statement: "Turned in to canteen cash counter by lunch staff.",
-    similarity_score: 0.72,
-    holding_location: "Main Security Gate 1",
-    reason_for_escalation: "Two claimants submitted requests for same found ID card",
-  },
-];
-
 // 30-Day Historical Match Resolution Telemetry
 const RESOLUTION_TREND_DATA = [
   { date: "Day 1-5", resolved: 8, reported: 12 },
@@ -124,59 +95,6 @@ interface CampusReportRecord {
   status: "Open" | "Matching" | "Under Review" | "Recovered";
 }
 
-const INITIAL_REPORTS: CampusReportRecord[] = [
-  {
-    id: "REP-401",
-    type: "Lost",
-    item_name: "Casio fx-991EX Calculator",
-    category: "Academic Tools & Calculators",
-    location: "Central Library - 2nd Floor",
-    reporter: "neha.patil23@vit.edu",
-    date: "Sep 22, 10:15 AM",
-    status: "Under Review",
-  },
-  {
-    id: "REP-402",
-    type: "Found",
-    item_name: "Casio Scientific Calculator",
-    category: "Academic Tools & Calculators",
-    location: "Central Library Reading Desk",
-    reporter: "staff.library@vit.edu",
-    date: "Sep 22, 11:30 AM",
-    status: "Under Review",
-  },
-  {
-    id: "REP-403",
-    type: "Lost",
-    item_name: "Boat Airdopes 141 Case (Black)",
-    category: "Electronics & Audio",
-    location: "D-Block Room 304",
-    reporter: "aditya.kulkarni24@vit.edu",
-    date: "Sep 21, 04:00 PM",
-    status: "Matching",
-  },
-  {
-    id: "REP-404",
-    type: "Found",
-    item_name: "Blue Fastrack Water Bottle",
-    category: "Other Belongings",
-    location: "Sports Complex Badminton Court",
-    reporter: "prashant.shinde@vit.edu",
-    date: "Sep 21, 06:15 PM",
-    status: "Open",
-  },
-  {
-    id: "REP-405",
-    type: "Lost",
-    item_name: "VIT RFID Student Smartcard",
-    category: "Identity Cards & Campus Keys",
-    location: "Student Cafeteria",
-    reporter: "riya.sharma22@vit.edu",
-    date: "Sep 20, 01:20 PM",
-    status: "Recovered",
-  },
-];
-
 interface InviteRecord {
   code: string;
   role: string;
@@ -185,25 +103,6 @@ interface InviteRecord {
   expires: string;
   status: "Active" | "Redeemed" | "Expired";
 }
-
-const INITIAL_INVITES: InviteRecord[] = [
-  {
-    code: "VIT-INV-8F2K9M",
-    role: "Central Library Helpdesk Officer",
-    campus: "Bibwewadi Campus",
-    created: "Sep 20, 2026",
-    expires: "Sep 27, 2026",
-    status: "Active",
-  },
-  {
-    code: "VIT-INV-4A9P1Q",
-    role: "Gate 1 Security Incharge",
-    campus: "Bibwewadi Campus",
-    created: "Sep 18, 2026",
-    expires: "Sep 25, 2026",
-    status: "Redeemed",
-  },
-];
 
 interface EscalatedCase {
   id: string;
@@ -249,6 +148,16 @@ export default function AdminConsolePage() {
   const [escalationNotes, setEscalationNotes] = useState("");
   const [isUpdatingEscalation, setIsUpdatingEscalation] = useState(false);
 
+  // Reports state
+  const [reports, setReports] = useState<CampusReportRecord[]>([]);
+  const [reportFilter, setReportFilter] = useState<"All" | "Lost" | "Found" | "Recovered">("All");
+  const [reportSearch, setReportSearch] = useState("");
+
+  // Invites state
+  const [invites, setInvites] = useState<InviteRecord[]>([]);
+  const [newInviteCode, setNewInviteCode] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
   React.useEffect(() => {
     const staffCookie = typeof document !== "undefined" ? document.cookie.includes("vit_staff_session") : false;
     const staffLocal = typeof window !== "undefined" ? localStorage.getItem("vit_staff_session") : null;
@@ -262,7 +171,7 @@ export default function AdminConsolePage() {
         const res = await fetch(`/api/admin/claims?status=${claimFilter}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.claims && Array.isArray(data.claims) && data.claims.length > 0) {
+          if (data.claims && Array.isArray(data.claims)) {
             const mapped: PendingClaim[] = data.claims.map((c: any) => ({
               id: c.id,
               item_name: c.match?.lost_report?.item_name || c.match?.found_report?.item_name || "Campus Item",
@@ -277,22 +186,49 @@ export default function AdminConsolePage() {
               reason_for_escalation: c.result === "rejected" ? `Failed verification (<50% similarity: ~${Math.round((c.similarity_score || 0) * 100)}%) - Recorded in Audit Log` : (c.reason_for_escalation || "Similarity score in borderline range"),
             }));
             setClaims(mapped);
-            setSelectedClaim(mapped[0]);
+            setSelectedClaim(mapped[0] || null);
           } else {
-            setClaims(claimFilter === "escalated" ? INITIAL_CLAIMS : []);
-            setSelectedClaim(claimFilter === "escalated" ? INITIAL_CLAIMS[0] : null);
+            setClaims([]);
+            setSelectedClaim(null);
           }
         } else {
-          setClaims(INITIAL_CLAIMS);
-          setSelectedClaim(INITIAL_CLAIMS[0]);
+          setClaims([]);
+          setSelectedClaim(null);
         }
       } catch (e) {
-        setClaims(INITIAL_CLAIMS);
-        setSelectedClaim(INITIAL_CLAIMS[0]);
+        setClaims([]);
+        setSelectedClaim(null);
       }
     };
     fetchClaims();
   }, [claimFilter]);
+
+  // Fetch real campus reports for Reports tab and top stat counts
+  React.useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const res = await fetch("/api/reports");
+        if (res.ok) {
+          const data = await res.json();
+          const rawReports = data.reports || [];
+          const mapped: CampusReportRecord[] = rawReports.map((r: any) => ({
+            id: r.id?.substring(0, 8) || "REP-000",
+            type: r.type === "lost" ? "Lost" : "Found",
+            item_name: r.item_name || "Unmatched Campus Item",
+            category: r.category || "General",
+            location: r.location || "Campus Facility",
+            reporter: r.reporter_email || "student@vit.edu",
+            date: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recently",
+            status: r.status === "recovered" ? "Recovered" : r.status === "matched" ? "Matching" : "Open",
+          }));
+          setReports(mapped);
+        }
+      } catch (e) {
+        console.warn("Reports fetch notice:", e);
+      }
+    };
+    fetchReports();
+  }, [activeTab]);
 
   const fetchEscalations = async () => {
     try {
@@ -350,20 +286,10 @@ export default function AdminConsolePage() {
     }
   };
 
-  // Reports state
-  const [reports, setReports] = useState<CampusReportRecord[]>(INITIAL_REPORTS);
-  const [reportFilter, setReportFilter] = useState<"All" | "Lost" | "Found" | "Recovered">("All");
-  const [reportSearch, setReportSearch] = useState("");
-
-  // Invites state
-  const [invites, setInvites] = useState<InviteRecord[]>(INITIAL_INVITES);
-  const [newInviteCode, setNewInviteCode] = useState<string | null>(null);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  // Top stat counts
+  // Top stat counts computed from live reports
   const pendingCount = claims.length;
-  const activeReportsCount = 47;
-  const recoveredLast7DaysCount = 19;
+  const activeReportsCount = reports.filter((r) => r.status !== "Recovered").length;
+  const recoveredLast7DaysCount = reports.filter((r) => r.status === "Recovered").length;
 
   const handleApprove = async (claimId: string) => {
     try {

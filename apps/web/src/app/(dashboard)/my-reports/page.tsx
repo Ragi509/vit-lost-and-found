@@ -23,42 +23,8 @@ interface Report {
   };
 }
 
-const DEFAULT_REPORTS: Report[] = [
-  {
-    id: "rep-001",
-    name: "TI-84 Plus CE Graphing Calculator",
-    category: "Academic Tools & Calculators",
-    type: "lost",
-    location: "D-Block, 3rd Floor Computer Lab 304",
-    date: "Sep 21, 2026",
-    createdAt: "2026-09-21T10:00:00.000Z",
-    status: "matched",
-    hasMatch: true,
-  },
-  {
-    id: "rep-002",
-    name: "Decathlon 1L Stainless Steel Bottle",
-    category: "Accessories",
-    type: "found",
-    location: "Sports Complex - Badminton Bench",
-    date: "Sep 22, 2026",
-    createdAt: "2026-09-22T12:00:00.000Z",
-    status: "searching",
-  },
-  {
-    id: "rep-003",
-    name: "SanDisk 64GB USB Flash Drive",
-    category: "Electronics",
-    type: "lost",
-    location: "Central Library Digital Section",
-    date: "Sep 15, 2026",
-    createdAt: "2026-09-15T09:00:00.000Z",
-    status: "recovered",
-  },
-];
-
 export default function MyReportsPage() {
-  const [reports, setReports] = useState<Report[]>(DEFAULT_REPORTS);
+  const [reports, setReports] = useState<Report[]>([]);
   const [activeTab, setActiveTab] = useState<"lost" | "found" | "resolved">("lost");
   const [isLoading, setIsLoading] = useState(false);
   const [thresholdHours, setThresholdHours] = useState<number>(72);
@@ -71,7 +37,11 @@ export default function MyReportsPage() {
     setIsLoading(true);
     try {
       const session = getStoredSession();
-      const userId = session?.id || "a1111111-1111-1111-1111-111111111111";
+      if (!session?.id) {
+        setReports([]);
+        setIsLoading(false);
+        return;
+      }
 
       // 1. Fetch escalations map
       const escalationsMap: Record<string, any> = {};
@@ -89,11 +59,11 @@ export default function MyReportsPage() {
         console.warn("Escalations fetch notice:", err);
       }
 
-      // 2. Fetch live reports
-      const res = await fetch(`/api/reports?reporterId=${userId}`);
+      // 2. Fetch live reports for current authenticated user
+      const res = await fetch(`/api/reports?reporterId=${session.id}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.reports && data.reports.length > 0) {
+        if (data.reports && Array.isArray(data.reports)) {
           const live: Report[] = data.reports.map((r: any) => {
             const esc = escalationsMap[r.id];
             const displayStatus = esc ? "under_human_review" : (r.status as any);
@@ -111,37 +81,14 @@ export default function MyReportsPage() {
             };
           });
 
-          setReports((prev) => {
-            const ids = new Set(live.map((l) => l.id));
-            return [...live, ...prev.filter((p) => !ids.has(p.id))];
-          });
+          setReports(live);
+        } else {
+          setReports([]);
         }
-      }
-
-      // 3. Also read from local cache
-      const cached = JSON.parse(localStorage.getItem("vit_user_reports") || "[]");
-      if (cached.length > 0) {
-        const cachedFormatted: Report[] = cached.map((c: any) => {
-          const esc = escalationsMap[c.id];
-          return {
-            id: c.id,
-            name: c.item_name,
-            category: c.category,
-            type: c.type,
-            location: c.location,
-            date: "Recently",
-            createdAt: c.created_at || new Date().toISOString(),
-            status: esc ? "under_human_review" : "searching",
-            escalation: esc ? { id: esc.id, status: esc.status, admin_notes: esc.admin_notes } : undefined,
-          };
-        });
-        setReports((prev) => {
-          const ids = new Set(prev.map((p) => p.id));
-          return [...cachedFormatted.filter((c) => !ids.has(c.id)), ...prev];
-        });
       }
     } catch (e) {
       console.warn("My reports fetch notice:", e);
+      setReports([]);
     } finally {
       setIsLoading(false);
     }

@@ -29,13 +29,7 @@ export default function UserDashboard() {
     location: string;
     status: "searching" | "matched" | "verification_required" | "recovered" | "under_human_review";
     isEscalated: boolean;
-  }>({
-    id: "rep-001",
-    name: "TI-84 Plus CE Graphing Calculator",
-    location: "D-Block, 3rd Floor Computer Lab 304",
-    status: "matched",
-    isEscalated: false,
-  });
+  } | null>(null);
 
   useEffect(() => {
     // 1. Resolve user identity from session
@@ -70,31 +64,12 @@ export default function UserDashboard() {
           .select("*", { count: "exact", head: true })
           .eq("status", "recovered");
         if (recCount !== null && recCount !== undefined) {
-          setRecoveredCount(recCount > 0 ? recCount : 42);
+          setRecoveredCount(recCount);
+        } else {
+          setRecoveredCount(0);
         }
 
-        // Check latest high confidence match
-        const { data: latestMatches } = await supabase
-          .from("matches")
-          .select("id, confidence_score, status, lost_report_id, found_report_id")
-          .order("confidence_score", { ascending: false })
-          .limit(1);
-
-        if (latestMatches && latestMatches.length > 0) {
-          const m = latestMatches[0];
-          const pct = Math.round(m.confidence_score * 100);
-          setMatchAlert({
-            match_id: m.id,
-            found_item_name: "Texas Instruments Graphing Calculator",
-            found_location: "D-Block, Computer Lab 304",
-            holding_location: "D-Block Security Counter (Ground Floor)",
-            confidence_score: m.confidence_score,
-            approximate_label: `~${pct}% match`,
-            lost_item_name: "TI-84 Plus CE Graphing Calculator",
-          });
-        }
-
-        // Check user's active report and escalation
+        // Check user's active report and escalation first
         const currentSession = getStoredSession();
         if (currentSession?.id) {
           const userRepRes = await fetch(`/api/reports?reporterId=${currentSession.id}`);
@@ -118,8 +93,34 @@ export default function UserDashboard() {
                 status: isEsc ? "under_human_review" : (latestRep.status as any),
                 isEscalated: isEsc,
               });
+            } else {
+              setActiveReportInfo(null);
             }
           }
+
+          // Fetch matches for user's reports
+          const userMatchesRes = await fetch(`/api/matches?userId=${currentSession.id}`);
+          if (userMatchesRes.ok) {
+            const matchData = await userMatchesRes.json();
+            if (matchData.matches && matchData.matches.length > 0) {
+              const m = matchData.matches[0];
+              const pct = Math.round(m.confidence_score * 100);
+              setMatchAlert({
+                match_id: m.id,
+                found_item_name: m.found_report?.item_name || "Found Item",
+                found_location: m.found_report?.location || "Campus",
+                holding_location: m.found_report?.holding_location || "Security Desk",
+                confidence_score: m.confidence_score,
+                approximate_label: `~${pct}% match`,
+                lost_item_name: m.lost_report?.item_name || "Lost Item",
+              });
+            } else {
+              setMatchAlert(null);
+            }
+          }
+        } else {
+          setActiveReportInfo(null);
+          setMatchAlert(null);
         }
       } catch (err) {
         console.warn("Live metric fetch notice:", err);
@@ -282,45 +283,58 @@ export default function UserDashboard() {
           </Link>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3 border-b border-border">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <CardTitle className="text-base">{activeReportInfo.name}</CardTitle>
-                <CardDescription className="text-xs mt-0.5">
-                  Reported lost at {activeReportInfo.location}
-                </CardDescription>
+        {activeReportInfo ? (
+          <Card>
+            <CardHeader className="pb-3 border-b border-border">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base">{activeReportInfo.name}</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">
+                    Reported lost at {activeReportInfo.location}
+                  </CardDescription>
+                </div>
+                <StatusBadge status={activeReportInfo.status} />
               </div>
-              <StatusBadge status={activeReportInfo.status} />
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <StepIndicator currentStep={activeReportInfo.isEscalated ? "verify" : "match"} className="max-w-xl mx-auto" />
-            <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-teal-600" />
-                <span>
-                  {activeReportInfo.isEscalated
-                    ? "Next step: Campus security desk is manually reviewing physical logs and custody"
-                    : "Next step: Review candidate match and submit blind ownership proof"}
-                </span>
+            </CardHeader>
+            <CardContent className="p-6">
+              <StepIndicator currentStep={activeReportInfo.isEscalated ? "verify" : "match"} className="max-w-xl mx-auto" />
+              <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-teal-600" />
+                  <span>
+                    {activeReportInfo.isEscalated
+                      ? "Next step: Campus security desk is manually reviewing physical logs and custody"
+                      : "Next step: Review candidate match and submit blind ownership proof"}
+                  </span>
+                </div>
+                {activeReportInfo.isEscalated ? (
+                  <Link href="/my-reports">
+                    <Button variant="outline" size="sm">
+                      <span>View Escalation Status</span>
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href={matchAlert ? `/matches/${matchAlert.match_id}` : "/matches"}>
+                    <Button variant="outline" size="sm">
+                      <span>View Match Comparison</span>
+                    </Button>
+                  </Link>
+                )}
               </div>
-              {activeReportInfo.isEscalated ? (
-                <Link href="/my-reports">
-                  <Button variant="outline" size="sm">
-                    <span>View Escalation Status</span>
-                  </Button>
-                </Link>
-              ) : (
-                <Link href={`/matches/${matchAlert?.match_id || "match-001"}`}>
-                  <Button variant="outline" size="sm">
-                    <span>View Match Comparison</span>
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="p-8 text-center border-dashed">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No Active Reports Submitted</p>
+            <p className="text-xs text-slate-500 mt-1 mb-4">You currently have no active lost or found item reports in the campus system.</p>
+            <Link href="/report/lost">
+              <Button variant="primary" size="sm">
+                <PlusCircle className="w-4 h-4 mr-2" />
+                <span>File a Lost Item Report</span>
+              </Button>
+            </Link>
+          </Card>
+        )}
       </div>
     </div>
   );

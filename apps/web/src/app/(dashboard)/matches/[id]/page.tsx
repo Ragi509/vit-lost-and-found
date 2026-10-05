@@ -46,35 +46,8 @@ interface MatchDetails {
   };
 }
 
-const DEFAULT_MATCH: MatchDetails = {
-  id: "match-001",
-  confidence_score: 0.907,
-  text_score: 0.91,
-  image_score: 0.88,
-  category_score: 1.0,
-  lost_item: {
-    title: "TI-84 Plus CE Graphing Calculator",
-    category: "Academic Tools & Calculators",
-    reporter: "You (Aditya Joshi)",
-    location: "D-Block, 3rd Floor Computer Lab 304",
-    date: "September 20, 2026 • 3:30 PM",
-    description:
-      "Black Texas Instruments graphing calculator left on a desk after Advanced Mathematics lecture. Has a yellow battery cover tape.",
-  },
-  found_item: {
-    title: "Texas Instruments Graphing Calculator",
-    category: "Academic Tools & Calculators",
-    reporter: "Campus Student Section",
-    location: "D-Block, Computer Lab 304",
-    date: "September 21, 2026 • 4:15 PM",
-    holding_location: "D-Block Security Counter (Ground Floor)",
-    description:
-      "Found a black TI calculator on desk 14 after the afternoon practical session. Screen in good condition with slide cover attached.",
-  },
-};
-
 export default function MatchDetailPage({ params }: { params: { id: string } }) {
-  const [match, setMatch] = useState<MatchDetails>(DEFAULT_MATCH);
+  const [match, setMatch] = useState<MatchDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -112,10 +85,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                 photo_url: m.found_report?.photo_url,
               },
             });
+          } else {
+            setMatch(null);
           }
         }
       } catch (e) {
         console.warn("Match fetch warning:", e);
+        setMatch(null);
       } finally {
         setIsLoading(false);
       }
@@ -123,6 +99,29 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
     fetchMatch();
   }, [params.id]);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 text-center text-sm text-slate-500">
+        Loading match details...
+      </div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 text-center space-y-4">
+        <p className="text-base font-bold text-slate-900 dark:text-slate-100">Match Record Not Found</p>
+        <p className="text-xs text-slate-500">The requested match record could not be retrieved from campus databases.</p>
+        <Link href="/matches">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span>Back to Matches List</span>
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   // Derive attribute-level comparison facts
   const isExactCategory =

@@ -17,46 +17,19 @@ interface Notification {
   link?: string;
 }
 
-const DEFAULT_NOTIFICATIONS: Notification[] = [
-  {
-    id: "notif-001",
-    type: "match",
-    title: "High Similarity Match Detected (~91%)",
-    body: "A Texas Instruments Graphing Calculator found at D-Block Computer Lab closely matches your lost report.",
-    timestamp: "Just now",
-    read: false,
-    link: "/matches/match-001",
-  },
-  {
-    id: "notif-002",
-    type: "verification",
-    title: "Claim Submitted to Security Desk",
-    body: "Your verification request for the Decathlon bottle has been logged and assigned token VIT-REC-89240.",
-    timestamp: "2 hours ago",
-    read: true,
-    link: "/recovered/item-001",
-  },
-  {
-    id: "notif-003",
-    type: "system",
-    title: "VIT Email Domain Verified",
-    body: "Your student institutional account is authenticated for the 2026 academic term.",
-    timestamp: "1 day ago",
-    read: true,
-  },
-];
-
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(DEFAULT_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "match" | "verification" | "system">("all");
   const [isLiveConnected, setIsLiveConnected] = useState(false);
 
   const fetchLiveNotifications = async () => {
     try {
-      const res = await fetch("/api/notifications");
+      const session = getStoredSession();
+      const userParam = session?.id ? `?userId=${session.id}` : "";
+      const res = await fetch(`/api/notifications${userParam}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.notifications && data.notifications.length > 0) {
+        if (data.notifications && Array.isArray(data.notifications)) {
           const formatted: Notification[] = data.notifications.map((n: any) => ({
             id: n.id,
             type: n.type as any,
@@ -67,14 +40,14 @@ export default function NotificationsPage() {
             link: n.data?.match_id ? `/matches/${n.data.match_id}` : undefined,
           }));
 
-          setNotifications((prev) => {
-            const ids = new Set(formatted.map((f) => f.id));
-            return [...formatted, ...prev.filter((p) => !ids.has(p.id))];
-          });
+          setNotifications(formatted);
+        } else {
+          setNotifications([]);
         }
       }
     } catch (e) {
       console.warn("Notifications fetch notice:", e);
+      setNotifications([]);
     }
   };
 
