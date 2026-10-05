@@ -5,6 +5,19 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+function emailToUuid(email: string): string {
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = (hash << 5) - hash + email.charCodeAt(i);
+    hash |= 0;
+  }
+  const hex = Math.abs(hash).toString(16).padStart(8, "0");
+  const hex2 = Math.abs(hash * 31).toString(16).padStart(8, "0");
+  const hex3 = Math.abs(hash * 17).toString(16).padStart(8, "0");
+  const hex4 = Math.abs(hash * 13).toString(16).padStart(8, "0");
+  return `${hex}-${hex2.slice(0, 4)}-4${hex3.slice(0, 3)}-a${hex4.slice(0, 3)}-${hex.slice(0, 4)}${hex2.slice(0, 8)}`;
+}
+
 export async function POST(request: Request) {
   try {
     const { email, code } = await request.json();
@@ -26,7 +39,7 @@ export async function POST(request: Request) {
     const parsed = parseVitEmail(cleanEmail);
 
     // Resolve or provision real UUID from public.users table
-    let userId = "a1111111-1111-1111-1111-111111111111"; // Fallback seed student
+    let userId = emailToUuid(cleanEmail);
     try {
       const supabase = createAdminClient();
       const { data: userRec } = await supabase
