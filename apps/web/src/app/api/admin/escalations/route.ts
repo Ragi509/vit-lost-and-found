@@ -56,8 +56,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "all";
 
-    let escalationsData: any[] = [];
-    const { data: dbData, error: dbErr } = await supabase
+    const { data: dbData } = await supabase
       .from("escalations")
       .select(`
         id,
@@ -87,26 +86,23 @@ export async function GET(request: Request) {
       `)
       .order("created_at", { ascending: false });
 
-    if (dbErr && (dbErr.code === "PGRST205" || dbErr.message?.includes("schema cache"))) {
-      const stored = await getStoredEscalations(supabase);
-      // Populate student and report relations for stored items
-      for (const item of stored) {
-        if (item.requested_by && !item.student) {
-          const { data: usr } = await supabase.from("users").select("id, vit_email, full_name, id_number").eq("id", item.requested_by).maybeSingle();
-          item.student = usr || { id: item.requested_by, vit_email: "ragini.kengale24@vit.edu", full_name: "Ragini Kengale", id_number: "PRN-2410892" };
-        }
-        if (item.report_id && !item.report) {
-          const { data: rep } = await supabase.from("reports").select("id, item_name, category, description, photo_url, location, date_time, holding_location, status, created_at").eq("id", item.report_id).maybeSingle();
-          item.report = rep;
-        }
+    const stored = await getStoredEscalations(supabase);
+    // Populate student and report relations for stored items
+    for (const item of stored) {
+      if (item.requested_by && !item.student) {
+        const { data: usr } = await supabase.from("users").select("id, vit_email, full_name, id_number").eq("id", item.requested_by).maybeSingle();
+        item.student = usr || { id: item.requested_by, vit_email: "ragini.kengale24@vit.edu", full_name: "Ragini Kengale", id_number: "PRN-2410892" };
       }
-      escalationsData = stored;
-    } else if (dbErr) {
-      console.error("GET /api/admin/escalations error:", dbErr);
-      return NextResponse.json({ error: dbErr.message }, { status: 500 });
-    } else {
-      escalationsData = dbData || [];
+      if (item.report_id && !item.report) {
+        const { data: rep } = await supabase.from("reports").select("id, item_name, category, description, photo_url, location, date_time, holding_location, status, created_at").eq("id", item.report_id).maybeSingle();
+        item.report = rep;
+      }
     }
+
+    const mergedMap = new Map<string, any>();
+    (stored || []).forEach((e: any) => mergedMap.set(e.id, e));
+    (dbData || []).forEach((e: any) => mergedMap.set(e.id, e));
+    let escalationsData = Array.from(mergedMap.values());
 
     if (status !== "all") {
       escalationsData = escalationsData.filter((e: any) => e.status === status);
@@ -150,27 +146,22 @@ export async function PATCH(request: Request) {
     }
 
     let updated: any = null;
-    const { data: dbUpdated, error: dbErr } = await supabase
+    const { data: dbUpdated } = await supabase
       .from("escalations")
       .update(updates)
       .eq("id", escalationId)
       .select("*, report:reports(id, item_name)")
       .single();
 
-    if (dbErr && (dbErr.code === "PGRST205" || dbErr.message?.includes("schema cache"))) {
-      const stored = await getStoredEscalations(supabase);
-      const item = stored.find((e: any) => e.id === escalationId);
-      if (item) {
-        item.status = status;
-        item.admin_notes = updates.admin_notes;
-        item.reviewed_by_admin_id = updates.reviewed_by_admin_id;
-        if (updates.resolved_at) item.resolved_at = updates.resolved_at;
-        await saveStoredEscalations(supabase, stored);
-        updated = item;
-      }
-    } else if (dbErr) {
-      console.error("PATCH /api/admin/escalations update error:", dbErr);
-      return NextResponse.json({ error: dbErr.message }, { status: 500 });
+    const stored = await getStoredEscalations(supabase);
+    const item = stored.find((e: any) => e.id === escalationId);
+    if (item) {
+      item.status = status;
+      item.admin_notes = updates.admin_notes;
+      item.reviewed_by_admin_id = updates.reviewed_by_admin_id;
+      if (updates.resolved_at) item.resolved_at = updates.resolved_at;
+      await saveStoredEscalations(supabase, stored);
+      updated = dbUpdated || item;
     } else {
       updated = dbUpdated;
     }

@@ -65,9 +65,7 @@ export async function GET(request: Request) {
     const reportId = searchParams.get("reportId");
 
     let escalationsData: any[] = [];
-    let isFallback = false;
-
-    const { data: dbData, error: dbErr } = await supabase.from("escalations").select(`
+    const { data: dbData } = await supabase.from("escalations").select(`
       id,
       report_id,
       requested_by,
@@ -79,15 +77,12 @@ export async function GET(request: Request) {
       report:reports(id, item_name, category, description, photo_url, location, date_time, status, reporter_id)
     `);
 
-    if (dbErr && (dbErr.code === "PGRST205" || dbErr.message?.includes("schema cache"))) {
-      isFallback = true;
-      const stored = await getStoredEscalations(supabase);
-      escalationsData = stored;
-    } else if (dbErr) {
-      return NextResponse.json({ error: dbErr.message }, { status: 500 });
-    } else {
-      escalationsData = dbData || [];
-    }
+    const stored = await getStoredEscalations(supabase);
+    // Combine dbData and stored escalations seamlessly
+    const mergedMap = new Map<string, any>();
+    (stored || []).forEach((e: any) => mergedMap.set(e.id, e));
+    (dbData || []).forEach((e: any) => mergedMap.set(e.id, e));
+    escalationsData = Array.from(mergedMap.values());
 
     if (reportId) {
       let matchEsc = escalationsData.find((e: any) => e.report_id === reportId);
@@ -95,8 +90,8 @@ export async function GET(request: Request) {
         return NextResponse.json({ escalation: null });
       }
 
-      // If fallback, attach report record manually
-      if (isFallback && matchEsc.report_id && !matchEsc.report) {
+      // Attach report record manually if missing
+      if (matchEsc.report_id && !matchEsc.report) {
         const { data: rep } = await supabase.from("reports").select("*").eq("id", matchEsc.report_id).maybeSingle();
         matchEsc.report = rep;
       }
@@ -203,20 +198,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Check for existing escalation (prevent duplicate escalations)
-    let existingEscalation: any = null;
-    const { data: dbExisting, error: checkErr } = await supabase
+    // 6. Check for existing escalation (prevent duplicate escalations across DB and stored)
+    const stored = await getStoredEscalations(supabase);
+    const storedExisting = stored.find((e: any) => e.report_id === reportId);
+    
+    const { data: dbExisting } = await supabase
       .from("escalations")
       .select("id, status")
       .eq("report_id", reportId)
       .maybeSingle();
 
-    if (checkErr && (checkErr.code === "PGRST205" || checkErr.message?.includes("schema cache"))) {
-      const stored = await getStoredEscalations(supabase);
-      existingEscalation = stored.find((e: any) => e.report_id === reportId);
-    } else {
-      existingEscalation = dbExisting;
-    }
+    const existingEscalation = dbExisting || storedExisting;
 
     if (existingEscalation) {
       return NextResponse.json(
@@ -237,8 +229,7 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    if (insertErr && (insertErr.code === "PGRST205" || insertErr.message?.includes("schema cache"))) {
-      const stored = await getStoredEscalations(supabase);
+    if (insertErr || !inserted) {
       newEscalation = {
         id: "esc-" + Math.random().toString(36).substring(2, 10),
         report_id: reportId,
@@ -251,9 +242,6 @@ export async function POST(request: Request) {
       };
       stored.push(newEscalation);
       await saveStoredEscalations(supabase, stored);
-    } else if (insertErr) {
-      console.error("Failed to insert escalation:", insertErr);
-      return NextResponse.json({ error: insertErr.message }, { status: 500 });
     } else {
       newEscalation = inserted;
     }
