@@ -1,67 +1,46 @@
-# Pre-Loaded Demo Scenario Reference Data
-## Faculty Presentation — Single Real Test Case
+# Pre-Loaded Demonstration Test Cases (Live Production Database)
+## Faculty Presentation — 3 Real Student Scenarios
 
-This file records the exact identifiers, accounts, and scores for the single pre-loaded demo case.
-**Automated regression tests MUST exclude these IDs.**
-
----
-
-### 1. Accounts & Persona Credentials
-- **Student Persona (Lost Report Owner)**:
-  - **Email**: `ragini.kengale24@vit.edu`
-  - **Name**: Ragini Kengale
-  - **PRN**: `PRN-2410892`
-  - **User ID**: `a1111111-1111-1111-1111-111111111111`
-  - **Login Method**: Normal student institutional login via OTP (delivered to developer Resend sandbox inbox)
-
-- **Student Finder (Found Report Submitter)**:
-  - **Email**: `aditya.joshi22@vit.edu`
-  - **Name**: Aditya Joshi
-  - **PRN**: `PRN-2210451`
-  - **User ID**: `a2222222-2222-2222-2222-222222222222`
-
-- **Campus Security / Staff Administrator**:
-  - **Email**: `security.head@vit.edu`
-  - **Name**: Sanjay Jadhav (Head of Campus Security)
-  - **Staff ID**: `STAFF-SEC-01`
-  - **User ID**: `b1111111-1111-1111-1111-111111111111`
-  - **Login Method**: Staff portal email & password sign-in (`/staff/login`)
+This reference document contains the exact identifiers, student accounts, item specifications, and AI match scores for all 3 demonstration scenarios seeded in the live production database.
 
 ---
 
-### 2. Core Entities
-- **Lost Report ID**: `dc920850-40f3-44a8-b1d1-63e18a053573`
-  - **Item Name**: Dell Inspiron 15 3520 laptop (silver-grey)
-  - **Category**: Laptops & Accessories
-  - **Location**: D-Block - 3rd Floor Computer Lab 304
-  - **Date/Time**: 2026-10-12T16:30:00.000Z
-  - **Photo URL**: `https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/dc920850-40f3-44a8-b1d1-63e18a053573/photo.jpg`
-  - **Private Detail**: *"Small crack on the bottom-left corner of the screen bezel, and a blue Decathlon sticker on the lid near the hinge."* (Encrypted in `report_secrets`)
+### Student Personas Used
 
-- **Found Report ID**: `a3d73b49-8417-4f2d-bd91-eb08af561258`
-  - **Item Name**: Dell laptop with charger
-  - **Category**: Laptops & Accessories
-  - **Location**: D-Block - 3rd Floor Computer Lab 304
-  - **Photo URL**: `https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/a3d73b49-8417-4f2d-bd91-eb08af561258/photo.jpg`
-  - **Holding Location**: Handed to the Lost & Found office
-
-- **Match ID**: `ee10bcd5-c577-43f1-a362-13343dcd70b0`
-  - **Confidence Score**: `0.88` (`~88%`)
-  - **Text Score**: `0.88`
-  - **Image Score**: `0.85`
-  - **Category Score**: `1.00`
-  - **Status**: `suggested` (**UNCLAIMED** — ready for live demonstration)
-
-- **Notification ID**: `c4f672b3-06ce-4f54-ba45-f7d3e937b5f5`
-  - **Target User**: `a1111111-1111-1111-1111-111111111111`
-  - **Unread Status**: `true`
+1. **Ragini Kengale** (`ragini.kengale24@vit.edu`, PRN: `PRN-2410892`, ID: `a1111111-1111-1111-1111-111111111111`)
+   - Lost Owner for Case 1 (Dell Laptop) & Case 3 (boAt Earbuds).
+   - In-app notifications: 2 unread match alerts.
+2. **Neha Patil** (`neha.patil23@vit.edu`, PRN: `PRN-2310619`, ID: `a3333333-3333-3333-3333-333333333333`)
+   - Lost Owner for Case 2 (Casio Calculator) & Finder for Case 3 (boAt Earbuds).
+   - In-app notifications: 1 unread match alert.
+3. **Aditya Joshi** (`aditya.joshi22@vit.edu`, PRN: `PRN-2210451`, ID: `a2222222-2222-2222-2222-222222222222`)
+   - Finder for Case 1 (Dell Laptop) & Case 2 (Casio Calculator).
 
 ---
 
-### 3. Prepared Claimant Answers for Live Demo
+### Scenario Breakdown
 
-| Test Case | Submitted Answer | Expected Result | Real Similarity Score |
-|---|---|---|---|
-| **Close Answer (Auto-Approve)** | *"Small crack on the bottom-left corner of the screen bezel, and a blue Decathlon sticker on the lid near the hinge."* | **Approved** (`>= 0.80`) | ~0.86 – 1.00 |
-| **Vague Answer (Escalate to Human)** | *"It has a small crack on the frame and a blue sticker."* | **Escalated** (`0.50 – 0.79`) | ~0.65 – 0.72 |
-| **Incorrect Answer (Reject with Retry)** | *"It has an Apple logo and a Batman sticker on the lid."* | **Rejected** (`< 0.50`) | ~0.15 – 0.30 |
+### Case 1: Dell Inspiron 15 Laptop
+- **Lost Report ID**: `6a426f9d-091d-4acf-972c-9e9857175c4c` (Owner: Ragini Kengale — `ragini.kengale24@vit.edu`)
+- **Found Report ID**: `067ab840-b288-4dde-9d82-f2ef7ab888f7` (Finder: Aditya Joshi)
+- **AI Match ID**: `67b5c191-1861-4da3-bf38-e4f3df1cefb9`
+- **Multi-Factor Confidence Score**: `0.88` (~88%)
+- **Match Status**: `suggested` (**UNCLAIMED** — ready for live verification demo)
+- **Encrypted Secret**: *"Small crack on the bottom-left corner of the screen bezel, and a blue Decathlon sticker on the lid near the hinge."*
+
+### Case 2: Casio fx-991CW Calculator
+- **Lost Report ID**: `91436be5-94b6-4d50-8352-412937616517` (Owner: Neha Patil — `neha.patil23@vit.edu`)
+- **Found Report ID**: `3ece4c3c-74f3-4f73-9cec-280f2ea82012` (Finder: Aditya Joshi)
+- **AI Match ID**: `6eb4c842-650c-491a-98f9-50acf3dc77a7`
+- **Multi-Factor Confidence Score**: `0.875` (~88%)
+- **Match Status**: `suggested` (**UNCLAIMED** — ready for live verification demo)
+- **Encrypted Secret**: *"Name "Neha P." written in permanent black marker on the back of the sliding protective cover, and small blue ink dot inside battery compartment."*
+
+### Case 3: boAt Wireless Earbuds
+- **Lost Report ID**: `1c103700-2f47-444a-93b4-4bb7233f6dd9` (Owner: Ragini Kengale — `ragini.kengale24@vit.edu`)
+- **Found Report ID**: `c2654025-a287-4a6c-95d4-295aa4f039f2` (Finder: Neha Patil)
+- **AI Match ID**: `f87038b5-cfc0-4d00-a094-bcbf738c5dd3`
+- **Multi-Factor Confidence Score**: `0.865` (~87%)
+- **Match Status**: `suggested` (**UNCLAIMED** — ready for live verification demo)
+- **Encrypted Secret**: *"Tiny scratch across the front LED indicator, and initials "RK" marked in silver marker under the charging lid."*
+

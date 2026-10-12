@@ -12,7 +12,7 @@
 - [ ] **Warm Up Render Microservice**: Open a new tab and visit `https://vit-lost-found-embedding.onrender.com/health` (wait until it returns `{"status":"healthy"}`).
 - [ ] **Open Developer Email Inbox**: Ensure you have access to `raginikengale@gmail.com` in a separate tab to copy the OTP instantly.
 - [ ] **Open Supabase Console**: Keep `https://supabase.com/dashboard/project/ruvkhuocnixoouphosku/editor` open in a background tab if faculty ask to see the live database tables.
-- [ ] **Clean Slate Check**: Confirm database contains exactly the single unclaimed demo match (see `docs/DEMO_DATA.md`).
+- [ ] **Demo Data Check**: Confirm database contains the 3 pre-loaded unclaimed demo matches (see [`docs/DEMO_DATA.md`](./DEMO_DATA.md)).
 
 ---
 
@@ -59,13 +59,14 @@
 ### Step 3: AI Matching Engine & Multi-Factor Breakdown (2:15 – 3:45)
 
 1. Click on the notification or navigate to **"AI Matches"** (`/matches`).
-2. Point out the match card linking:
-   - **Lost Item**: *Dell Inspiron 15 3520 laptop (silver-grey)* — reported by Ragini.
-   - **Found Item**: *Dell laptop with charger* — found in D-Block Lab 304 by student Aditya Joshi.
-3. Click **"View Match Details"** (`/matches/[id]`):
+2. Point out the **3 Live Match Cards** computed by the AI engine:
+   - **Case 1 (Laptops)**: *Dell Inspiron 15 3520 laptop (silver-grey)* $\leftrightarrow$ *Dell laptop with charger* (Lab 304) — **88% Match**
+   - **Case 2 (Academic Tools)**: *Casio fx-991CW ClassWiz calculator* $\leftrightarrow$ *Casio scientific calculator with white cover* (Drafting Hall 102) — **88% Match**
+   - **Case 3 (Electronics)**: *boAt Airdopes 141 ANC wireless earbuds* $\leftrightarrow$ *White boAt earbuds case with blue strap* (Central Library) — **87% Match**
+3. Click **"View Match Details"** on Case 1 (`/matches/[id]`):
    - **Point out the Multi-Factor Confidence Score: 88%**:
-     - **Semantic Text Overlap (50% weight)**: $0.88$ score. The system extracted dense 384-dimensional sentence embeddings (`all-MiniLM-L6-v2`) comparing the two descriptions.
-     - **Visual Resemblance (40% weight)**: $0.85$ score. Both genuine photos were compared using 512-dimensional CLIP vectors.
+     - **Semantic Text Overlap (50% weight)**: $0.88$ score. The system evaluated semantic similarity between descriptions.
+     - **Visual Resemblance (40% weight)**: $0.85$ score. Both genuine photos compared with visual feature vectors.
      - **Category Match (10% weight)**: $1.00$ score. Both classified under *Laptops & Accessories*.
      - **Formula**: $0.50(0.88) + 0.40(0.85) + 0.10(1.00) = 0.88$ (88%).
    - Highlight the **Holding Location**: *"Handed to the Lost & Found office"*.

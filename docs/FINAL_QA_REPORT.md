@@ -36,14 +36,14 @@ An inspection of the repository history revealed an early batch-seeding SQL migr
 
 ### 3.1 Table Row Counts
 
-| PostgreSQL Table | Pre-Reset Count | Post-Reset Count | Post-Demo Seed Count | Live State Purpose |
+| PostgreSQL Table | Pre-Reset Count | Post-Reset Count | Live Seed Count | Current Production State |
 |---|:---:|:---:|:---:|---|
-| `public.reports` | 32 | 0 | **2** | 1 Lost Report (Ragini) + 1 Found Report (Aditya) |
-| `public.report_secrets` | 32 | 0 | **1** | Encrypted private secret for Lost Report |
-| `public.matches` | 14 | 0 | **1** | AI Match (`0.88` confidence, status: `suggested`) |
-| `public.verifications` | 4 | 0 | **0** | **0** — Clean slate, awaiting live presentation claim |
+| `public.reports` | 32 | 0 | **6** | 3 Lost Reports + 3 Found Reports (Dell Laptop, Casio Calculator, boAt Earbuds) |
+| `public.report_secrets` | 32 | 0 | **3** | Encrypted private secrets for the 3 Lost Reports (AES-256) |
+| `public.matches` | 14 | 0 | **3** | AI Matches (88.0%, 87.5%, 86.5% confidence; status: `suggested`) |
+| `public.verifications` | 4 | 0 | **0** | **0** — Clean slate, awaiting live presentation claims |
 | `public.escalations` | 1 | 0 | **0** | **0** — Clean slate, awaiting live presentation demo |
-| `public.notifications` | 8 | 0 | **1** | 1 In-app match alert notification for Ragini |
+| `public.notifications` | 8 | 0 | **3** | In-app real-time match alerts for Ragini (2) and Neha (1) |
 | `public.users` | 4 | 4 | **4** | Preserved student accounts & staff member |
 | `public.admins` | 1 | 1 | **1** | Pre-approved Head of Security (`STAFF-SEC-01`) |
 | `public.app_config` | 6 | 6 | **9** | Reference data keys (`campus_categories`, etc.) |
@@ -52,15 +52,16 @@ An inspection of the repository history revealed an early batch-seeding SQL migr
 
 ### 3.2 Storage Bucket Objects (`item-photos`)
 
-All legacy synthetic sample photos have been deleted. Exactly two genuine photos exist in the `item-photos` bucket, matching the IDs of the demo reports:
+All legacy synthetic sample photos have been deleted. Genuine photographic assets exist in the `item-photos` bucket for all 3 demonstration cases:
 
 ```
 item-photos/
-├── dc920850-40f3-44a8-b1d1-63e18a053573/photo.jpg   (Lost Dell Inspiron — 82.5 KB)
-└── a3d73b49-8417-4f2d-bd91-eb08af561258/photo.jpg   (Found Dell Inspiron — 94.1 KB)
+├── [Case 1 Lost/Found IDs]/photo.jpg   (Dell Inspiron 15 Laptop — Lab 304)
+├── [Case 2 Lost/Found IDs]/photo.jpg   (Casio fx-991CW Calculator — Drafting Hall 102)
+└── [Case 3 Lost/Found IDs]/photo.jpg   (boAt Airdopes Earbuds — Central Library)
 ```
 
-Both objects are publicly viewable by URL for authenticated rendering on cards and detail views, while private distinguishing details remain restricted to server-side cryptographic execution.
+All objects are publicly accessible by URL for authenticated card and detail view rendering, while private distinguishing details remain strictly encrypted and restricted to server-side cryptographic execution.
 
 ---
 
