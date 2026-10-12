@@ -87,6 +87,12 @@ An automated audit script was implemented and wired directly into the build pipe
 - If the Render embedding microservice is sleeping or unreachable, verification attempts are **transparently routed to the security staff escalation queue** with audit reason `"microservice_unreachable_escalated"`.
 - Under no circumstances does the application substitute weak text heuristics, hardcoded random scores, or approximate matching.
 
+### 4.5 User-Scoped Queries & Interface Reflection
+- Identified and fixed the root cause of empty reports in "My Reports": client-side OTP login previously generated temporary IDs that bypassed RLS, while server sessions maintained valid UUIDs.
+- Updated all consumer routes (`/my-reports`, `/dashboard`, `/matches`, `/notifications`, `/profile`) to support server-side session recovery via `/api/auth/me` and accept institutional email aliases (`reporterEmail`, `email`, `userEmail`) in API queries.
+- Added explicit `LOST` / `FOUND` badge rendering across report cards and tabs ("All Reports", "My Lost Items", "My Found Submissions", "Resolved").
+- Replaced static card action links with dynamic targets (`/matches` and `/recovered/${report.id}`).
+
 ---
 
 ## 5. End-to-End Regression Suite Results
