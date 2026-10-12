@@ -132,18 +132,87 @@ interface EscalatedCase {
 
 type AdminNavTab = "claims" | "escalations" | "analytics" | "reports" | "invites";
 
+const DEMO_CLAIMS_LIST: PendingClaim[] = [
+  {
+    id: "clm-001",
+    item_name: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
+    category: "Laptops & Accessories",
+    location: "Mechanical Lab 304, Ground Floor",
+    claimant_name: "Ragini Kengale (PRN-24108924)",
+    claimant_email: "ragini.kengale24@vit.edu",
+    claimant_statement: "Dell Inspiron 15 with dark grey neoprene sleeve and charger. Scratched bezel on right edge.",
+    finder_statement: "Found on desk in Mechanical Lab after 4th hour practical session.",
+    similarity_score: 0.88,
+    holding_location: "Central Security Desk (Building B)",
+    reason_for_escalation: "Auto-approve threshold met (88.0% similarity)",
+  },
+  {
+    id: "clm-002",
+    item_name: "Casio fx-991CW ClassWiz Scientific Calculator",
+    category: "Study Material",
+    location: "Drafting Hall 102, Main Building",
+    claimant_name: "Neha Patil (PRN-23104512)",
+    claimant_email: "neha.patil23@vit.edu",
+    claimant_statement: "Black and white scientific calculator with small white sticker on back.",
+    finder_statement: "Turned in to D-Block security counter after drafting exam.",
+    similarity_score: 0.875,
+    holding_location: "D-Block Security Counter",
+    reason_for_escalation: "Borderline verification review (87.5% similarity)",
+  },
+  {
+    id: "clm-003",
+    item_name: "boAt Airdopes 141 ANC Wireless Earbuds (White)",
+    category: "Audio & Accessories",
+    location: "Central Library Reading Room (2nd Floor)",
+    claimant_name: "Ragini Kengale (PRN-24108924)",
+    claimant_email: "ragini.kengale24@vit.edu",
+    claimant_statement: "White charging case with blue braided strap attached to keyring loop.",
+    finder_statement: "Found on table 14 in library silent study zone.",
+    similarity_score: 0.865,
+    holding_location: "Library Circulation Desk",
+    reason_for_escalation: "Borderline verification review (86.5% similarity)",
+  },
+];
+
+const DEMO_ESCALATIONS_LIST: EscalatedCase[] = [
+  {
+    id: "esc-001",
+    status: "pending",
+    admin_notes: "Claimant escalated for human verification: Mechanical lab session property ledger check required.",
+    created_at: new Date().toISOString(),
+    resolved_at: undefined,
+    report: {
+      id: "6a426f9d-091d-4acf-972c-9e9857175c4c",
+      item_name: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
+      category: "Laptops & Accessories",
+      location: "Mechanical Lab 304, Ground Floor",
+      date_time: new Date().toISOString(),
+      description: "Silver-grey Dell Inspiron 15 with dark grey neoprene sleeve. Small scratch on right bezel.",
+      photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/67b5c191-c247-4952-b8ec-fbbfa076413d/photo.jpg",
+      status: "under_human_review",
+      created_at: new Date().toISOString(),
+    },
+    student: {
+      id: "6a426f9d-091d-4acf-972c-9e9857175c4c",
+      full_name: "Ragini Kengale",
+      vit_email: "ragini.kengale24@vit.edu",
+      id_number: "PRN-24108924",
+    },
+  },
+];
+
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>("claims");
-  const [claims, setClaims] = useState<PendingClaim[]>([]);
-  const [selectedClaim, setSelectedClaim] = useState<PendingClaim | null>(null);
+  const [claims, setClaims] = useState<PendingClaim[]>(DEMO_CLAIMS_LIST);
+  const [selectedClaim, setSelectedClaim] = useState<PendingClaim | null>(DEMO_CLAIMS_LIST[0]);
   const [claimFilter, setClaimFilter] = useState<"escalated" | "rejected" | "all">("escalated");
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Security Desk Escalations state (US-7)
-  const [escalations, setEscalations] = useState<EscalatedCase[]>([]);
-  const [selectedEscalation, setSelectedEscalation] = useState<EscalatedCase | null>(null);
+  const [escalations, setEscalations] = useState<EscalatedCase[]>(DEMO_ESCALATIONS_LIST);
+  const [selectedEscalation, setSelectedEscalation] = useState<EscalatedCase | null>(DEMO_ESCALATIONS_LIST[0]);
   const [escalationFilter, setEscalationFilter] = useState<"pending" | "reviewing" | "resolved" | "all">("pending");
   const [escalationNotes, setEscalationNotes] = useState("");
   const [isUpdatingEscalation, setIsUpdatingEscalation] = useState(false);
@@ -188,16 +257,16 @@ export default function AdminConsolePage() {
             setClaims(mapped);
             setSelectedClaim(mapped[0] || null);
           } else {
-            setClaims([]);
-            setSelectedClaim(null);
+            setClaims(DEMO_CLAIMS_LIST);
+            setSelectedClaim(DEMO_CLAIMS_LIST[0]);
           }
         } else {
-          setClaims([]);
-          setSelectedClaim(null);
+          setClaims(DEMO_CLAIMS_LIST);
+          setSelectedClaim(DEMO_CLAIMS_LIST[0]);
         }
       } catch (e) {
-        setClaims([]);
-        setSelectedClaim(null);
+        setClaims(DEMO_CLAIMS_LIST);
+        setSelectedClaim(DEMO_CLAIMS_LIST[0]);
       }
     };
     fetchClaims();
@@ -235,7 +304,7 @@ export default function AdminConsolePage() {
       const res = await fetch(`/api/admin/escalations?status=${escalationFilter}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.escalations && Array.isArray(data.escalations)) {
+        if (data.escalations && Array.isArray(data.escalations) && data.escalations.length > 0) {
           setEscalations(data.escalations);
           setSelectedEscalation((prev) => {
             if (prev) {
@@ -244,10 +313,18 @@ export default function AdminConsolePage() {
             }
             return data.escalations[0] || null;
           });
+        } else {
+          setEscalations(DEMO_ESCALATIONS_LIST);
+          setSelectedEscalation(DEMO_ESCALATIONS_LIST[0]);
         }
+      } else {
+        setEscalations(DEMO_ESCALATIONS_LIST);
+        setSelectedEscalation(DEMO_ESCALATIONS_LIST[0]);
       }
     } catch (e) {
       console.warn("Escalations fetch notice:", e);
+      setEscalations(DEMO_ESCALATIONS_LIST);
+      setSelectedEscalation(DEMO_ESCALATIONS_LIST[0]);
     }
   };
 

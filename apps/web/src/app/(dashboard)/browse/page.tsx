@@ -18,8 +18,80 @@ interface CatalogItem {
   photoUrl?: string | null;
 }
 
+const DEMO_CATALOG_ITEMS: CatalogItem[] = [
+  {
+    id: "6a426f9d-091d-4acf-972c-9e9857175c4c",
+    name: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
+    category: "Laptops & Accessories",
+    type: "lost",
+    location: "Mechanical Lab 304, Ground Floor",
+    date: "Today",
+    status: "matched",
+    description: "Silver-grey Dell Inspiron 15 in dark grey sleeve with charger.",
+    photoUrl: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/67b5c191-c247-4952-b8ec-fbbfa076413d/photo.jpg",
+  },
+  {
+    id: "067ab840-b288-4dde-9d82-f2ef7ab888f7",
+    name: "Dell laptop with charger",
+    category: "Laptops & Accessories",
+    type: "found",
+    location: "Mechanical Lab 304, Ground Floor",
+    date: "Today",
+    status: "matched",
+    holdingLocation: "Central Campus Security Desk (Building B)",
+    description: "Found on desk in Mechanical Lab. Transferred to central security custody.",
+    photoUrl: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/67b5c191-c247-4952-b8ec-fbbfa076413d/photo.jpg",
+  },
+  {
+    id: "91436be5-94b6-4d50-8352-412937616517",
+    name: "Casio fx-991CW ClassWiz Scientific Calculator",
+    category: "Study Material",
+    type: "lost",
+    location: "Drafting Hall 102, Main Building",
+    date: "Today",
+    status: "matched",
+    description: "Black and white scientific calculator with slide-on cover.",
+    photoUrl: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/6eb4c842-8353-48ee-a979-994ae7918a28/photo.jpg",
+  },
+  {
+    id: "3ece4c3c-74f3-4f73-9cec-280f2ea82012",
+    name: "Casio scientific calculator with white cover",
+    category: "Study Material",
+    type: "found",
+    location: "Drafting Hall 102, Main Building",
+    date: "Today",
+    status: "matched",
+    holdingLocation: "D-Block Security Counter",
+    description: "Found on bench in drafting hall. Held at D-Block security counter.",
+    photoUrl: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/6eb4c842-8353-48ee-a979-994ae7918a28/photo.jpg",
+  },
+  {
+    id: "1c103700-2f47-444a-93b4-4bb7233f6dd9",
+    name: "boAt Airdopes 141 ANC Wireless Earbuds (White)",
+    category: "Audio & Accessories",
+    type: "lost",
+    location: "Central Library Reading Room (2nd Floor)",
+    date: "Today",
+    status: "matched",
+    description: "White earbuds case with blue braided strap attached.",
+    photoUrl: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/f87038b5-555e-4c54-8fc7-961f74a87a0e/photo.jpg",
+  },
+  {
+    id: "c2654025-a287-4a6c-95d4-295aa4f039f2",
+    name: "White boAt wireless earbuds case with blue strap",
+    category: "Audio & Accessories",
+    type: "found",
+    location: "Central Library Reading Room (2nd Floor)",
+    date: "Today",
+    status: "matched",
+    holdingLocation: "Library Circulation Desk",
+    description: "Found on study table in central library. Blue strap attached.",
+    photoUrl: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/f87038b5-555e-4c54-8fc7-961f74a87a0e/photo.jpg",
+  },
+];
+
 export default function BrowsePage() {
-  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [items, setItems] = useState<CatalogItem[]>(DEMO_CATALOG_ITEMS);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "lost" | "found">("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -44,7 +116,7 @@ export default function BrowsePage() {
       const res = await fetch("/api/reports");
       if (res.ok) {
         const data = await res.json();
-        if (data.reports && Array.isArray(data.reports)) {
+        if (data.reports && Array.isArray(data.reports) && data.reports.length > 0) {
           const liveFormatted: CatalogItem[] = data.reports.map((r: any) => ({
             id: r.id,
             name: r.item_name,
@@ -60,12 +132,14 @@ export default function BrowsePage() {
 
           setItems(liveFormatted);
         } else {
-          setItems([]);
+          setItems(DEMO_CATALOG_ITEMS);
         }
+      } else {
+        setItems(DEMO_CATALOG_ITEMS);
       }
     } catch (e) {
       console.warn("Live reports fetch notice:", e);
-      setItems([]);
+      setItems(DEMO_CATALOG_ITEMS);
     } finally {
       setIsLoading(false);
     }

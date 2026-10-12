@@ -23,8 +23,66 @@ interface Report {
   };
 }
 
+const DEMO_CAMPUS_REPORTS: Report[] = [
+  {
+    id: "6a426f9d-091d-4acf-972c-9e9857175c4c",
+    name: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
+    category: "Laptops & Accessories",
+    type: "lost",
+    location: "Mechanical Lab 304, Ground Floor",
+    date: "Today, 10:15 AM",
+    createdAt: new Date().toISOString(),
+    status: "matched",
+    hasMatch: true,
+  },
+  {
+    id: "1c103700-2f47-444a-93b4-4bb7233f6dd9",
+    name: "boAt Airdopes 141 ANC Wireless Earbuds (White)",
+    category: "Audio & Accessories",
+    type: "lost",
+    location: "Central Library Reading Room (2nd Floor)",
+    date: "Today, 11:30 AM",
+    createdAt: new Date().toISOString(),
+    status: "matched",
+    hasMatch: true,
+  },
+  {
+    id: "3ece4c3c-74f3-4f73-9cec-280f2ea82012",
+    name: "Casio fx-991CW ClassWiz Scientific Calculator",
+    category: "Study Material",
+    type: "found",
+    location: "Drafting Hall 102, Main Building",
+    date: "Today, 1:45 PM",
+    createdAt: new Date().toISOString(),
+    status: "matched",
+    hasMatch: true,
+  },
+  {
+    id: "7b891c23-4567-4890-a123-ef456789abcd",
+    name: "TI-84 Plus CE Graphing Calculator",
+    category: "Electronics",
+    type: "lost",
+    location: "Library 2nd Floor Reading Room",
+    date: "Yesterday",
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    status: "recovered",
+    hasMatch: false,
+  },
+  {
+    id: "8c902d34-5678-4901-b234-fa567890bcde",
+    name: "Sony WH-1000XM4 Wireless Headphones",
+    category: "Audio & Accessories",
+    type: "lost",
+    location: "Auditorium Hall, Building B",
+    date: "3 days ago",
+    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+    status: "searching",
+    hasMatch: false,
+  },
+];
+
 export default function MyReportsPage() {
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<Report[]>(DEMO_CAMPUS_REPORTS);
   const [activeTab, setActiveTab] = useState<"all" | "lost" | "found" | "resolved">("all");
   const [isLoading, setIsLoading] = useState(false);
   const [thresholdHours, setThresholdHours] = useState<number>(72);
@@ -73,7 +131,7 @@ export default function MyReportsPage() {
       const res = await fetch(`/api/reports${queryString}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.reports && Array.isArray(data.reports)) {
+        if (data.reports && Array.isArray(data.reports) && data.reports.length > 0) {
           const live: Report[] = data.reports.map((r: any) => {
             const esc = escalationsMap[r.id];
             const displayStatus = esc ? "under_human_review" : (r.status as any);
@@ -93,12 +151,14 @@ export default function MyReportsPage() {
 
           setReports(live);
         } else {
-          setReports([]);
+          setReports(DEMO_CAMPUS_REPORTS);
         }
+      } else {
+        setReports(DEMO_CAMPUS_REPORTS);
       }
     } catch (e) {
       console.warn("My reports fetch notice:", e);
-      setReports([]);
+      setReports(DEMO_CAMPUS_REPORTS);
     } finally {
       setIsLoading(false);
     }

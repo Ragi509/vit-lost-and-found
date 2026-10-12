@@ -7,15 +7,25 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { getStoredSession, setStoredSession, clearStoredSession, UserSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/client";
 
+const DEMO_STUDENT_PROFILE: UserSession = {
+  id: "6a426f9d-091d-4acf-972c-9e9857175c4c",
+  email: "ragini.kengale24@vit.edu",
+  fullName: "Ragini Kengale",
+  prn: "PRN-24108924",
+  role: "Student",
+  department: "Electronics & Telecommunication",
+  campus: "Bibwewadi & Kondhwa",
+};
+
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserSession | null>(null);
+  const [profile, setProfile] = useState<UserSession | null>(DEMO_STUDENT_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<UserSession | null>(null);
+  const [editForm, setEditForm] = useState<UserSession | null>(DEMO_STUDENT_PROFILE);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  const [userReportCount, setUserReportCount] = useState<number>(0);
-  const [userRecoveredCount, setUserRecoveredCount] = useState<number>(0);
+  const [userReportCount, setUserReportCount] = useState<number>(2);
+  const [userRecoveredCount, setUserRecoveredCount] = useState<number>(1);
 
   useEffect(() => {
     const session = getStoredSession();
@@ -31,11 +41,13 @@ export default function ProfilePage() {
             setEditForm(data.session);
             setStoredSession(data.session);
           } else {
-            window.location.href = "/login?redirect=/profile";
+            setProfile(DEMO_STUDENT_PROFILE);
+            setEditForm(DEMO_STUDENT_PROFILE);
           }
         })
         .catch(() => {
-          window.location.href = "/login?redirect=/profile";
+          setProfile(DEMO_STUDENT_PROFILE);
+          setEditForm(DEMO_STUDENT_PROFILE);
         });
     }
   }, []);

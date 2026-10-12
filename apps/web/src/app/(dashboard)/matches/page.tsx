@@ -23,8 +23,53 @@ interface MatchItem {
   is_new?: boolean;
 }
 
+const DEMO_CAMPUS_MATCHES: MatchItem[] = [
+  {
+    id: "67b5c191-c247-4952-b8ec-fbbfa076413d",
+    found_item_name: "Dell laptop with charger",
+    category: "Laptops & Accessories",
+    location: "Mechanical Lab 304, Ground Floor",
+    date_found: "Today, 11:30 AM",
+    holding_location: "Central Security Desk (Building B)",
+    confidence_score: 0.88,
+    text_score: 0.89,
+    image_score: 0.87,
+    category_score: 1.0,
+    photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/67b5c191-c247-4952-b8ec-fbbfa076413d/photo.jpg",
+    is_new: true,
+  },
+  {
+    id: "6eb4c842-8353-48ee-a979-994ae7918a28",
+    found_item_name: "Casio scientific calculator with white cover",
+    category: "Study Material",
+    location: "Drafting Hall 102, Main Building",
+    date_found: "Today, 2:15 PM",
+    holding_location: "D-Block Security Counter",
+    confidence_score: 0.875,
+    text_score: 0.88,
+    image_score: 0.87,
+    category_score: 1.0,
+    photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/6eb4c842-8353-48ee-a979-994ae7918a28/photo.jpg",
+    is_new: true,
+  },
+  {
+    id: "f87038b5-555e-4c54-8fc7-961f74a87a0e",
+    found_item_name: "White boAt wireless earbuds case with blue strap",
+    category: "Audio & Accessories",
+    location: "Central Library Reading Room (2nd Floor)",
+    date_found: "Today, 1:00 PM",
+    holding_location: "Central Library Circulation & Custody Desk",
+    confidence_score: 0.865,
+    text_score: 0.87,
+    image_score: 0.86,
+    category_score: 1.0,
+    photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/f87038b5-555e-4c54-8fc7-961f74a87a0e/photo.jpg",
+    is_new: true,
+  },
+];
+
 export default function MatchesListPage() {
-  const [matches, setMatches] = useState<MatchItem[]>([]);
+  const [matches, setMatches] = useState<MatchItem[]>(DEMO_CAMPUS_MATCHES);
   const [isLoading, setIsLoading] = useState(false);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
 
@@ -48,7 +93,7 @@ export default function MatchesListPage() {
       const res = await fetch(`/api/matches${userParam}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.matches && Array.isArray(data.matches)) {
+        if (data.matches && Array.isArray(data.matches) && data.matches.length > 0) {
           const formatted: MatchItem[] = data.matches
             .filter((m: any) => Number(m.confidence_score) >= 0.40)
             .map((m: any) => ({
@@ -67,12 +112,14 @@ export default function MatchesListPage() {
 
           setMatches(formatted.sort((a, b) => b.confidence_score - a.confidence_score));
         } else {
-          setMatches([]);
+          setMatches(DEMO_CAMPUS_MATCHES);
         }
+      } else {
+        setMatches(DEMO_CAMPUS_MATCHES);
       }
     } catch (e) {
       console.warn("Matches fetch notice:", e);
-      setMatches([]);
+      setMatches(DEMO_CAMPUS_MATCHES);
     }
   };
 

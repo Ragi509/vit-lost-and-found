@@ -17,11 +17,29 @@ interface MatchAlert {
   lost_item_name: string;
 }
 
+const DEMO_MATCH_ALERT: MatchAlert = {
+  match_id: "67b5c191-c247-4952-b8ec-fbbfa076413d",
+  found_item_name: "Dell laptop with charger",
+  found_location: "Mechanical Lab 304, Ground Floor",
+  holding_location: "Central Campus Security Desk (Building B)",
+  confidence_score: 0.88,
+  approximate_label: "~88% match",
+  lost_item_name: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
+};
+
+const DEMO_ACTIVE_REPORT = {
+  id: "6a426f9d-091d-4acf-972c-9e9857175c4c",
+  name: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
+  location: "Mechanical Lab 304, Ground Floor",
+  status: "matched" as const,
+  isEscalated: false,
+};
+
 export default function UserDashboard() {
   const [user, setUser] = useState<UserSession | null>(null);
-  const [activeReportsCount, setActiveReportsCount] = useState(0);
-  const [recoveredCount, setRecoveredCount] = useState(0);
-  const [matchAlert, setMatchAlert] = useState<MatchAlert | null>(null);
+  const [activeReportsCount, setActiveReportsCount] = useState(8);
+  const [recoveredCount, setRecoveredCount] = useState(3);
+  const [matchAlert, setMatchAlert] = useState<MatchAlert | null>(DEMO_MATCH_ALERT);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [activeReportInfo, setActiveReportInfo] = useState<{
     id: string;
@@ -29,7 +47,7 @@ export default function UserDashboard() {
     location: string;
     status: "searching" | "matched" | "verification_required" | "recovered" | "under_human_review";
     isEscalated: boolean;
-  } | null>(null);
+  } | null>(DEMO_ACTIVE_REPORT);
 
   useEffect(() => {
     // 1. Resolve user identity from session
