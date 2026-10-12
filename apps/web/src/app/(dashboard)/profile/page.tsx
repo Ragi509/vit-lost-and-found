@@ -41,10 +41,13 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile?.id && !profile?.email) return;
     const fetchUserStats = async () => {
       try {
-        const res = await fetch(`/api/reports?userId=${profile.id}`);
+        const queryParams = new URLSearchParams();
+        if (profile?.id) queryParams.set("userId", profile.id);
+        if (profile?.email) queryParams.set("email", profile.email);
+        const res = await fetch(`/api/reports?${queryParams.toString()}`);
         if (res.ok) {
           const data = await res.json();
           const userReports = data.reports || [];
@@ -56,7 +59,7 @@ export default function ProfilePage() {
       }
     };
     fetchUserStats();
-  }, [profile?.id]);
+  }, [profile?.id, profile?.email]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();

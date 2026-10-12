@@ -54,22 +54,24 @@ export function parseVitEmail(email: string): { fullName: string; prn: string; r
 export function getStoredSession(): UserSession | null {
   if (typeof window === "undefined") return null;
   try {
-    let raw = localStorage.getItem("vit_user_session");
-    if (!raw) {
-      raw = localStorage.getItem("vit_staff_session");
-    }
-    if (raw) {
-      const parsed = parseSessionCookie(raw);
-      if (parsed) return parsed as UserSession;
-    }
-
-    // Fallback: check document.cookie
+    // Check cookie first if available to get genuine server-resolved UUID
     let match = document.cookie.match(/vit_session=([^;]+)/);
     if (!match) {
       match = document.cookie.match(/vit_staff_session=([^;]+)/);
     }
     if (match && match[1]) {
       const parsed = parseSessionCookie(match[1]);
+      if (parsed && parsed.id && !parsed.id.startsWith("user-")) {
+        return parsed as UserSession;
+      }
+    }
+
+    let raw = localStorage.getItem("vit_user_session");
+    if (!raw) {
+      raw = localStorage.getItem("vit_staff_session");
+    }
+    if (raw) {
+      const parsed = parseSessionCookie(raw);
       if (parsed) return parsed as UserSession;
     }
     return null;
@@ -116,6 +118,17 @@ export async function syncUserWithSupabase(email: string): Promise<UserSession> 
     department: "Department of Electronics & Computer Engineering",
     campus: "Bibwewadi Main Campus, Pune",
   };
+
+  try {
+    const meRes = await fetch("/api/auth/me");
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      if (meData.session && meData.session.id) {
+        setStoredSession(meData.session);
+        return meData.session;
+      }
+    }
+  } catch (_) {}
 
   try {
     // 1. Check if user already exists in public.users

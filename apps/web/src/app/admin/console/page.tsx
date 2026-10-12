@@ -290,6 +290,24 @@ export default function AdminConsolePage() {
   const pendingCount = claims.length;
   const activeReportsCount = reports.filter((r) => r.status !== "Recovered").length;
   const recoveredLast7DaysCount = reports.filter((r) => r.status === "Recovered").length;
+  const lostReportsCount = reports.filter((r) => r.type === "Lost").length;
+  const foundReportsCount = reports.filter((r) => r.type === "Found").length;
+
+  // Category breakdown computed dynamically from live reports
+  const categoryCounts: Record<string, number> = {};
+  reports.forEach((r) => {
+    const cat = r.category || "General";
+    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+  });
+  const categoryColors = ["#0f766e", "#2563eb", "#d97706", "#7c3aed", "#64748b", "#ec4899"];
+  const dynamicCategoryDistribution = Object.keys(categoryCounts).length > 0
+    ? Object.entries(categoryCounts).map(([name, count], idx) => ({
+        name,
+        count,
+        fill: categoryColors[idx % categoryColors.length],
+      }))
+    : CATEGORY_DISTRIBUTION;
+  const maxCategoryCount = Math.max(...dynamicCategoryDistribution.map((c) => c.count), 1);
 
   const handleApprove = async (claimId: string) => {
     try {
@@ -549,7 +567,7 @@ export default function AdminConsolePage() {
                 {activeReportsCount}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                28 Lost & 19 Found currently in campus registry
+                {lostReportsCount} Lost &amp; {foundReportsCount} Found currently in campus registry
               </p>
             </div>
 
@@ -1116,7 +1134,7 @@ export default function AdminConsolePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 space-y-3">
-                    {CATEGORY_DISTRIBUTION.map((cat) => (
+                    {dynamicCategoryDistribution.map((cat) => (
                       <div key={cat.name} className="space-y-1">
                         <div className="flex justify-between text-xs">
                           <span className="font-semibold text-slate-700 dark:text-slate-300">{cat.name}</span>
@@ -1126,7 +1144,7 @@ export default function AdminConsolePage() {
                           <div
                             className="h-full rounded-full"
                             style={{
-                              width: `${(cat.count / 32) * 100}%`,
+                              width: `${(cat.count / maxCategoryCount) * 100}%`,
                               backgroundColor: cat.fill,
                             }}
                           />

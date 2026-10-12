@@ -25,7 +25,7 @@ interface Report {
 
 export default function MyReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
-  const [activeTab, setActiveTab] = useState<"lost" | "found" | "resolved">("lost");
+  const [activeTab, setActiveTab] = useState<"all" | "lost" | "found" | "resolved">("all");
   const [isLoading, setIsLoading] = useState(false);
   const [thresholdHours, setThresholdHours] = useState<number>(72);
   const [selectedForEscalation, setSelectedForEscalation] = useState<Report | null>(null);
@@ -36,11 +36,17 @@ export default function MyReportsPage() {
   const fetchMyReports = async () => {
     setIsLoading(true);
     try {
-      const session = getStoredSession();
-      if (!session?.id) {
-        setReports([]);
-        setIsLoading(false);
-        return;
+      let session = getStoredSession();
+      if (!session) {
+        try {
+          const meRes = await fetch("/api/auth/me");
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.session) {
+              session = meData.session;
+            }
+          }
+        } catch (_) {}
       }
 
       // 1. Fetch escalations map
@@ -60,7 +66,11 @@ export default function MyReportsPage() {
       }
 
       // 2. Fetch live reports for current authenticated user
-      const res = await fetch(`/api/reports?reporterId=${session.id}`);
+      const queryParams = new URLSearchParams();
+      if (session?.id) queryParams.set("reporterId", session.id);
+      if (session?.email) queryParams.set("reporterEmail", session.email);
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+      const res = await fetch(`/api/reports${queryString}`);
       if (res.ok) {
         const data = await res.json();
         if (data.reports && Array.isArray(data.reports)) {
@@ -155,7 +165,12 @@ export default function MyReportsPage() {
     }
   };
 
+  const lostCount = reports.filter((r) => r.type === "lost" && r.status !== "recovered").length;
+  const foundCount = reports.filter((r) => r.type === "found" && r.status !== "recovered").length;
+  const resolvedCount = reports.filter((r) => r.status === "recovered").length;
+
   const filteredReports = reports.filter((r) => {
+    if (activeTab === "all") return true;
     if (activeTab === "resolved") return r.status === "recovered";
     return r.type === activeTab && r.status !== "recovered";
   });
@@ -192,18 +207,23 @@ export default function MyReportsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border">
-        {(["lost", "found", "resolved"] as const).map((tab) => (
+      <div className="flex border-b border-border overflow-x-auto">
+        {[
+          { key: "all", label: `All Reports (${reports.length})` },
+          { key: "lost", label: `My Lost Items (${lostCount})` },
+          { key: "found", label: `My Found Submissions (${foundCount})` },
+          { key: "resolved", label: `Resolved (${resolvedCount})` },
+        ].map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${
-              activeTab === tab
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === tab.key
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {tab === "lost" ? "My Lost Items" : tab === "found" ? "My Found Submissions" : "Resolved / Recovered"}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -222,7 +242,14 @@ export default function MyReportsPage() {
             return (
               <Card key={report.id} className="p-5 border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded uppercase ${
+                      report.type === "lost" 
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                    }`}>
+                      {report.type === "lost" ? "Lost Item" : "Found Item"}
+                    </span>
                     <StatusBadge status={report.status} />
                     <span className="text-xs text-muted-foreground">• {report.category}</span>
                     {report.escalation && (
@@ -262,16 +289,16 @@ export default function MyReportsPage() {
                   )}
 
                   {report.hasMatch && (
-                    <Link href="/matches/match-001">
+                    <Link href="/matches">
                       <Button variant="accent" size="sm">
-                        <span>View AI Match (~91%)</span>
+                        <span>View AI Matches</span>
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />
                       </Button>
                     </Link>
                   )}
 
                   {report.status === "recovered" && (
-                    <Link href="/recovered/rec-001">
+                    <Link href={`/recovered/${report.id}`}>
                       <Button variant="outline" size="sm">
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
                         <span>View Handover Pass</span>

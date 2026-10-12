@@ -1,20 +1,93 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle2, Building, ShieldCheck, QrCode, ArrowRight, Printer, Share2 } from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, StepIndicator, StatusBadge } from "@vit/ui";
 
+interface RecoveryData {
+  itemName: string;
+  token: string;
+  pickupDesk: string;
+  officer: string;
+  holdingHours: string;
+  timestamp: string;
+  reporterName: string;
+}
+
 export default function RecoveredPage({ params }: { params: { id: string } }) {
-  const recoveryData = {
-    itemName: "TI-84 Plus CE Graphing Calculator",
-    token: "VIT-REC-89240",
-    pickupDesk: "D-Block Security Counter (Ground Floor)",
-    officer: "Officer Shinde (Campus Security)",
-    holdingHours: "Monday to Saturday, 9:00 AM – 6:00 PM",
-    timestamp: "Verified Today at 4:32 PM",
-    reporterName: "Aditya Joshi",
-  };
+  const [recoveryData, setRecoveryData] = useState<RecoveryData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        // Try match lookup first
+        const matchRes = await fetch(`/api/matches/${params.id}`);
+        if (matchRes.ok) {
+          const mData = await matchRes.json();
+          if (mData?.match) {
+            const m = mData.match;
+            setRecoveryData({
+              itemName: m.found_report?.item_name || m.lost_report?.item_name || "Campus Item",
+              token: `VIT-REC-${m.id.substring(0, 8).toUpperCase()}`,
+              pickupDesk: m.found_report?.holding_location || "Central Campus Security Counter",
+              officer: "Officer on Duty (Campus Security)",
+              holdingHours: "Monday to Saturday, 9:00 AM – 6:00 PM",
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              reporterName: m.lost_report?.reporter?.full_name || "Verified Student",
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Fallback to report lookup
+        const repRes = await fetch("/api/reports");
+        if (repRes.ok) {
+          const rData = await repRes.json();
+          const target = (rData?.reports || []).find((r: any) => r.id === params.id);
+          if (target) {
+            setRecoveryData({
+              itemName: target.item_name,
+              token: `VIT-REC-${target.id.substring(0, 8).toUpperCase()}`,
+              pickupDesk: target.holding_location || "Central Campus Security Counter",
+              officer: "Officer on Duty (Campus Security)",
+              holdingHours: "Monday to Saturday, 9:00 AM – 6:00 PM",
+              timestamp: target.date_time ? new Date(target.date_time).toLocaleDateString() : "Verified Recently",
+              reporterName: target.reporter?.full_name || "Verified Student",
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load recovery details:", err);
+      }
+
+      setRecoveryData({
+        itemName: "Verified Campus Property",
+        token: `VIT-REC-${params.id.substring(0, 8).toUpperCase()}`,
+        pickupDesk: "Central Campus Security Counter",
+        officer: "Officer on Duty (Campus Security)",
+        holdingHours: "Monday to Saturday, 9:00 AM – 6:00 PM",
+        timestamp: "Active Verification",
+        reporterName: "Student",
+      });
+      setIsLoading(false);
+    }
+
+    loadData();
+  }, [params.id]);
+
+  if (isLoading || !recoveryData) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 text-center text-xs text-muted-foreground">
+        Loading custody verification handover pass...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -31,10 +104,10 @@ export default function RecoveredPage({ params }: { params: { id: string } }) {
             <StatusBadge status="recovered" />
           </div>
           <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Item Successfully Verified & Ready for Recovery
+            {recoveryData.itemName} Verified & Ready for Recovery
           </CardTitle>
           <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-            Ownership has been confirmed via blind vector verification.
+            Ownership confirmed via blind vector verification for {recoveryData.reporterName}.
           </CardDescription>
         </CardHeader>
 

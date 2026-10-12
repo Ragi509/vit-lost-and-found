@@ -13,14 +13,26 @@ export default function ClaimVerificationPage({ params }: { params: { matchId: s
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<"approved" | "escalated" | "rejected" | null>(null);
   const [similarity, setSimilarity] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifying(true);
     setVerificationResult(null);
+    setErrorMsg(null);
 
     try {
-      const session = getStoredSession();
+      let session = getStoredSession();
+      if (!session) {
+        try {
+          const meRes = await fetch("/api/auth/me");
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.session) session = meData.session;
+          }
+        } catch (_) {}
+      }
+
       const res = await fetch("/api/verifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,28 +46,16 @@ export default function ClaimVerificationPage({ params }: { params: { matchId: s
       const data = await res.json();
       setIsVerifying(false);
 
-      if (data.result) {
+      if (res.ok && data.result) {
         setSimilarity(data.similarity_score);
         setVerificationResult(data.result);
       } else {
-        // Fallback heuristic
-        const text = detailInput.toLowerCase();
-        if (text.includes("aj") || text.includes("silver marker") || text.includes("bezel") || text.includes("scratch")) {
-          setSimilarity(0.88);
-          setVerificationResult("approved");
-        } else if (text.includes("calculator") || text.includes("cover") || text.includes("tape")) {
-          setSimilarity(0.62);
-          setVerificationResult("escalated");
-        } else {
-          setSimilarity(0.31);
-          setVerificationResult("rejected");
-        }
+        setErrorMsg(data.error || "Verification request failed. Please check your network or try again.");
       }
-    } catch (err) {
-      console.warn("Verification API error:", err);
+    } catch (err: any) {
+      console.error("Verification API error:", err);
       setIsVerifying(false);
-      setSimilarity(0.88);
-      setVerificationResult("approved");
+      setErrorMsg(err.message || "Unable to reach verification service.");
     }
   };
 
@@ -220,6 +220,13 @@ export default function ClaimVerificationPage({ params }: { params: { matchId: s
                   <li>&ldquo;Serial number prefix 3892-A stamped on the bottom plate&rdquo;</li>
                 </ul>
               </div>
+
+              {errorMsg && (
+                <div className="p-3.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
               <Textarea
                 label="Your Ownership Detail"

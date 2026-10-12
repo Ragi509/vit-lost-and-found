@@ -24,8 +24,21 @@ export default function NotificationsPage() {
 
   const fetchLiveNotifications = async () => {
     try {
-      const session = getStoredSession();
-      const userParam = session?.id ? `?userId=${session.id}` : "";
+      let session = getStoredSession();
+      if (!session) {
+        try {
+          const meRes = await fetch("/api/auth/me");
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.session) session = meData.session;
+          }
+        } catch (_) {}
+      }
+
+      const queryParams = new URLSearchParams();
+      if (session?.id) queryParams.set("userId", session.id);
+      if (session?.email) queryParams.set("email", session.email);
+      const userParam = queryParams.toString() ? `?${queryParams.toString()}` : "";
       const res = await fetch(`/api/notifications${userParam}`);
       if (res.ok) {
         const data = await res.json();

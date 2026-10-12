@@ -8,14 +8,54 @@ export async function GET(request: Request) {
     const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const userEmail = searchParams.get("email") || searchParams.get("userEmail");
 
     let query = supabase
       .from("notifications")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (userId) {
-      query = query.eq("user_id", userId);
+    const targetUserIds: string[] = [];
+    if (userId) targetUserIds.push(userId);
+
+    if (userEmail) {
+      const { data: uRec } = await supabase
+        .from("users")
+        .select("id")
+        .eq("vit_email", userEmail.trim().toLowerCase())
+        .maybeSingle();
+      if (uRec?.id && !targetUserIds.includes(uRec.id)) {
+        targetUserIds.push(uRec.id);
+      }
+    }
+
+    if (targetUserIds.length === 0 || (userId && userId.startsWith("user-"))) {
+      const cookieHeader = request.headers.get("cookie") || "";
+      const match = cookieHeader.match(/vit_session=([^;]+)/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(match[1]));
+          if (parsed.email) {
+            const { data: uRec } = await supabase
+              .from("users")
+              .select("id")
+              .eq("vit_email", parsed.email.trim().toLowerCase())
+              .maybeSingle();
+            if (uRec?.id && !targetUserIds.includes(uRec.id)) {
+              targetUserIds.push(uRec.id);
+            }
+          }
+          if (parsed.id && !targetUserIds.includes(parsed.id)) {
+            targetUserIds.push(parsed.id);
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (targetUserIds.length === 1) {
+      query = query.eq("user_id", targetUserIds[0]);
+    } else if (targetUserIds.length > 1) {
+      query = query.in("user_id", targetUserIds);
     }
 
     const { data: notifications, error } = await query;

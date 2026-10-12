@@ -7,7 +7,7 @@ import { ShieldCheck, ArrowRight, AlertCircle, KeyRound, CheckCircle2, Compass }
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@vit/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Footer } from "@/components/Footer";
-import { getStoredSession, syncUserWithSupabase } from "@/lib/auth/session";
+import { getStoredSession, setStoredSession, syncUserWithSupabase } from "@/lib/auth/session";
 
 function LoginForm() {
   const router = useRouter();
@@ -103,7 +103,11 @@ function LoginForm() {
         return;
       }
 
-      await syncUserWithSupabase(email);
+      if (data.session) {
+        setStoredSession(data.session);
+      } else {
+        await syncUserWithSupabase(email);
+      }
       setIsLoading(false);
 
       // Successfully authenticated -> forward to the intended destination (e.g. /profile)

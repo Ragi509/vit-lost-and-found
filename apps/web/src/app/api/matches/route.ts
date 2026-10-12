@@ -35,11 +35,50 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Filter by user if requested
+    const userEmail = searchParams.get("email") || searchParams.get("userEmail");
+
+    // Filter by user if requested (supporting ID, Email, and session cookie fallback)
     let result = matches || [];
-    if (userId) {
+    const targetUserIds: string[] = [];
+    if (userId) targetUserIds.push(userId);
+
+    if (userEmail) {
+      const { data: uRec } = await supabase
+        .from("users")
+        .select("id")
+        .eq("vit_email", userEmail.trim().toLowerCase())
+        .maybeSingle();
+      if (uRec?.id && !targetUserIds.includes(uRec.id)) {
+        targetUserIds.push(uRec.id);
+      }
+    }
+
+    if (targetUserIds.length === 0 || (userId && userId.startsWith("user-"))) {
+      const cookieHeader = request.headers.get("cookie") || "";
+      const match = cookieHeader.match(/vit_session=([^;]+)/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(match[1]));
+          if (parsed.email) {
+            const { data: uRec } = await supabase
+              .from("users")
+              .select("id")
+              .eq("vit_email", parsed.email.trim().toLowerCase())
+              .maybeSingle();
+            if (uRec?.id && !targetUserIds.includes(uRec.id)) {
+              targetUserIds.push(uRec.id);
+            }
+          }
+          if (parsed.id && !targetUserIds.includes(parsed.id)) {
+            targetUserIds.push(parsed.id);
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (targetUserIds.length > 0) {
       result = result.filter(
-        (m: any) => m.lost_report?.reporter_id === userId || m.found_report?.reporter_id === userId
+        (m: any) => targetUserIds.includes(m.lost_report?.reporter_id) || targetUserIds.includes(m.found_report?.reporter_id)
       );
     }
 

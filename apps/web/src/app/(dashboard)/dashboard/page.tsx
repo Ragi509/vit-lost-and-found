@@ -50,29 +50,36 @@ export default function UserDashboard() {
 
     const fetchLiveMetrics = async () => {
       try {
-        // Count active reports
-        const { count: repCount } = await supabase
-          .from("reports")
-          .select("*", { count: "exact", head: true });
-        if (repCount !== null && repCount !== undefined) {
-          setActiveReportsCount(repCount);
+        // Count reports and recovered items via server API to bypass client RLS limits
+        const allRepRes = await fetch("/api/reports");
+        if (allRepRes.ok) {
+          const allRepData = await allRepRes.json();
+          if (Array.isArray(allRepData.reports)) {
+            setActiveReportsCount(allRepData.reports.length);
+            setRecoveredCount(allRepData.reports.filter((r: any) => r.status === "recovered").length);
+          }
         }
 
-        // Count recovered items
-        const { count: recCount } = await supabase
-          .from("reports")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "recovered");
-        if (recCount !== null && recCount !== undefined) {
-          setRecoveredCount(recCount);
-        } else {
-          setRecoveredCount(0);
+        // Check user's active report and escalation
+        let currentSession = getStoredSession();
+        if (!currentSession) {
+          try {
+            const meRes = await fetch("/api/auth/me");
+            if (meRes.ok) {
+              const meData = await meRes.json();
+              if (meData.session) {
+                currentSession = meData.session;
+                setUser(meData.session);
+              }
+            }
+          } catch (_) {}
         }
 
-        // Check user's active report and escalation first
-        const currentSession = getStoredSession();
-        if (currentSession?.id) {
-          const userRepRes = await fetch(`/api/reports?reporterId=${currentSession.id}`);
+        if (currentSession?.id || currentSession?.email) {
+          const repParams = new URLSearchParams();
+          if (currentSession.id) repParams.set("reporterId", currentSession.id);
+          if (currentSession.email) repParams.set("reporterEmail", currentSession.email);
+          const userRepRes = await fetch(`/api/reports?${repParams.toString()}`);
           if (userRepRes.ok) {
             const repData = await userRepRes.json();
             if (repData.reports && repData.reports.length > 0) {
@@ -99,7 +106,10 @@ export default function UserDashboard() {
           }
 
           // Fetch matches for user's reports
-          const userMatchesRes = await fetch(`/api/matches?userId=${currentSession.id}`);
+          const matchParams = new URLSearchParams();
+          if (currentSession.id) matchParams.set("userId", currentSession.id);
+          if (currentSession.email) matchParams.set("email", currentSession.email);
+          const userMatchesRes = await fetch(`/api/matches?${matchParams.toString()}`);
           if (userMatchesRes.ok) {
             const matchData = await userMatchesRes.json();
             if (matchData.matches && matchData.matches.length > 0) {

@@ -49,7 +49,8 @@ export async function GET(request: Request) {
     const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
-    const reporterId = searchParams.get("reporterId");
+    const reporterId = searchParams.get("reporterId") || searchParams.get("userId");
+    const reporterEmail = searchParams.get("reporterEmail") || searchParams.get("email") || searchParams.get("userEmail");
 
     let query = supabase
       .from("reports")
@@ -59,8 +60,52 @@ export async function GET(request: Request) {
     if (type && type !== "all") {
       query = query.eq("type", type);
     }
+
+    // Resolve target reporter IDs (supporting ID, Email, and session cookie fallback)
+    const targetUserIds: string[] = [];
     if (reporterId) {
-      query = query.eq("reporter_id", reporterId);
+      targetUserIds.push(reporterId);
+    }
+
+    if (reporterEmail) {
+      const { data: userRec } = await supabase
+        .from("users")
+        .select("id")
+        .eq("vit_email", reporterEmail.trim().toLowerCase())
+        .maybeSingle();
+      if (userRec?.id && !targetUserIds.includes(userRec.id)) {
+        targetUserIds.push(userRec.id);
+      }
+    }
+
+    // Cookie fallback if reporterId parameter looks like a temporary client string or empty
+    if (targetUserIds.length === 0 || (reporterId && reporterId.startsWith("user-"))) {
+      const cookieHeader = request.headers.get("cookie") || "";
+      const match = cookieHeader.match(/vit_session=([^;]+)/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(match[1]));
+          if (parsed.email) {
+            const { data: uRec } = await supabase
+              .from("users")
+              .select("id")
+              .eq("vit_email", parsed.email.trim().toLowerCase())
+              .maybeSingle();
+            if (uRec?.id && !targetUserIds.includes(uRec.id)) {
+              targetUserIds.push(uRec.id);
+            }
+          }
+          if (parsed.id && !targetUserIds.includes(parsed.id)) {
+            targetUserIds.push(parsed.id);
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (targetUserIds.length === 1) {
+      query = query.eq("reporter_id", targetUserIds[0]);
+    } else if (targetUserIds.length > 1) {
+      query = query.in("reporter_id", targetUserIds);
     }
 
     const { data: reports, error } = await query;
