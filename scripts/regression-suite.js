@@ -315,7 +315,7 @@ async function runRegressionSuite() {
       headers: {
         'Cookie': `vit_staff_session=${encodeURIComponent(JSON.stringify({ role: 'Staff' }))}`
       },
-      body: { verificationId: 'dummy-id', action: 'reject' }
+      body: { claimId: 'dummy-id', action: 'reject' }
     });
 
     const pass = noReasonRes.status === 400 && noReasonRes.data.error?.toLowerCase().includes('reason');

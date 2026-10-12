@@ -12,6 +12,13 @@ export async function POST(request: Request) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail.endsWith("@vit.edu") && !cleanEmail.endsWith(".vit.edu")) {
+      return NextResponse.json(
+        { error: "Only official @vit.edu institutional email addresses are permitted" },
+        { status: 400 }
+      );
+    }
     const result = await generateAndSendOtp(cleanEmail);
 
     if (!result.success) {

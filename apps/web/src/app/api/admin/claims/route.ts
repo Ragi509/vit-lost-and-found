@@ -48,16 +48,21 @@ export async function POST(request: Request) {
   try {
     const supabase = createAdminClient();
     const body = await request.json();
-    const { claimId, action, rejectReason, adminId } = body;
+    const { claimId, verificationId, action, rejectReason, adminId } = body;
+    const targetId = claimId || verificationId;
 
-    if (!claimId || !action) {
+    if (!targetId || !action) {
       return NextResponse.json({ error: "Missing claimId or action" }, { status: 400 });
+    }
+
+    if (action === "reject" && !rejectReason) {
+      return NextResponse.json({ error: "Mandatory rejection reason required" }, { status: 400 });
     }
 
     const { data: verif, error: fetchErr } = await supabase
       .from("verifications")
       .select("*, match:matches!verifications_match_id_fkey(*)")
-      .eq("id", claimId)
+      .eq("id", targetId)
       .single();
 
     if (fetchErr || !verif) {
@@ -71,7 +76,7 @@ export async function POST(request: Request) {
           result: "approved",
           reviewed_by_admin_id: adminId || "b1111111-1111-1111-1111-111111111111",
         })
-        .eq("id", claimId);
+        .eq("id", targetId);
 
       // Transition reports to recovered
       if (verif.match?.lost_report_id && verif.match?.found_report_id) {
@@ -107,7 +112,7 @@ export async function POST(request: Request) {
           reject_reason: rejectReason,
           reviewed_by_admin_id: adminId || "b1111111-1111-1111-1111-111111111111",
         })
-        .eq("id", claimId);
+        .eq("id", targetId);
 
       // Notify claimant
       await supabase.from("notifications").insert({
