@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-10-12T17-55-06-336Z",
+  "exported_at": "2026-10-12T17:55:06.347Z",
+  "tables": {
+    "users": {
+      "rows": 4,
+      "json_size": 973,
+      "csv_size": 599
+    },
+    "admins": {
+      "rows": 1,
+      "json_size": 256,
+      "csv_size": 193
+    },
+    "admin_invites": {
+      "rows": 0,
+      "json_size": 2,
+      "csv_size": 0
+    },
+    "reports": {
+      "rows": 33,
+      "json_size": 21329,
+      "csv_size": 11618
+    },
+    "matches": {
+      "rows": 8,
+      "json_size": 2955,
+      "csv_size": 1627
+    },
+    "verifications": {
+      "rows": 2,
+      "json_size": 767,
+      "csv_size": 463
+    },
+    "notifications": {
+      "rows": 33,
+      "json_size": 17072,
+      "csv_size": 12723
+    },
+    "escalations": {
+      "rows": 0,
+      "json_size": 2,
+      "csv_size": 0
+    },
+    "report_secrets": {
+      "rows": 0,
+      "json_size": 2,
+      "csv_size": 0
+    }
+  },
+  "storage_objects_count": 0
+}

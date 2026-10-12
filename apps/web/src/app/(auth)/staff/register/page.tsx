@@ -32,16 +32,24 @@ export default function StaffRegisterPage() {
     }
 
     setIsLoading(true);
-    // Simulate redeem_admin_invite verification
-    setTimeout(() => {
-      setIsLoading(false);
-      // Save pending admin registration details
-      localStorage.setItem(
-        "vit_pending_admin",
-        JSON.stringify({ fullName, email, department, staffId, status: "pending" })
-      );
+    try {
+      const res = await fetch("/api/auth/staff-register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode, fullName, department, staffId, email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Staff registration failed");
+      }
+
+      localStorage.setItem("vit_pending_admin", JSON.stringify(data.user));
       router.push("/staff/pending");
-    }, 800);
+    } catch (err: any) {
+      setError(err.message || "Network error occurred while submitting registration");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -79,7 +87,7 @@ export default function StaffRegisterPage() {
                   label="Invite / Access Code"
                   id="inviteCode"
                   type="text"
-                  placeholder="e.g. VIT-INV-8F92A1"
+                  placeholder="e.g. VIT-ADMIN-STAFF-2026"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
                   required

@@ -1,0 +1,453 @@
+[
+  {
+    "id": "9919899f-7c9d-4f19-b900-593bd442fdf9",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "High Similarity Match Found (~91%)",
+    "body": "A Texas Instruments Graphing Calculator found at D-Block Computer Lab 304 closely matches your lost report.",
+    "data": {
+      "lost_report_id": "c1111111-1111-1111-1111-111111111111",
+      "found_report_id": "c2222222-2222-2222-2222-222222222222"
+    },
+    "read": false,
+    "created_at": "2026-09-22T22:31:30.212078+00:00"
+  },
+  {
+    "id": "df2f4183-0edb-43fe-aefb-b89945f64f6a",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "High Similarity Match Detected (~91%)",
+    "body": "A Texas Instruments Graphing Calculator found at D-Block Computer Lab matches your lost report.",
+    "data": {
+      "match_id": "match-001"
+    },
+    "read": false,
+    "created_at": "2026-09-23T00:22:07.52036+00:00"
+  },
+  {
+    "id": "9c2df7f3-415e-4fab-8a2c-1dc24ca9f782",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~76% match)",
+    "body": "A candidate for your report \"Casio fx-991CW ClassWiz Scientific Calculator\" has been identified on campus.",
+    "data": {
+      "match_id": "3dc4c219-3029-410c-a539-82a6a45ff36b",
+      "report_id": "ddbd3686-731c-4802-91dc-d9c3b4e6cfca"
+    },
+    "read": false,
+    "created_at": "2026-09-23T00:55:59.355341+00:00"
+  },
+  {
+    "id": "a6a6ba32-7c74-4cf1-b2e8-ab79ae10cd60",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~72% match)",
+    "body": "A candidate for your report \"Found Casio Scientific Calculator fx-991CW in classroom\" has been identified on campus.",
+    "data": {
+      "match_id": "00a99a88-6276-400a-8c8d-4a2dc69172b9",
+      "report_id": "9291c61c-7f20-418e-9bc5-6642a538b702"
+    },
+    "read": false,
+    "created_at": "2026-09-23T00:55:59.596809+00:00"
+  },
+  {
+    "id": "a0e05040-6db6-43bc-a61b-7f5db5cc4258",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-75201 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-75201",
+      "match_id": "5fe1a4b8-e406-4164-9fd2-8f1bde341acd"
+    },
+    "read": false,
+    "created_at": "2026-09-23T00:55:59.794026+00:00"
+  },
+  {
+    "id": "98b98424-4474-43c2-9d31-e402eed6e948",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~81% match)",
+    "body": "A candidate for your report \"Casio fx-991CW ClassWiz Scientific Calculator\" has been identified on campus.",
+    "data": {
+      "match_id": "c5b18453-d43e-42af-a3f3-ee6c86b9c5fb",
+      "report_id": "bfb4cc31-2c87-42e8-a871-5b114507dae1"
+    },
+    "read": false,
+    "created_at": "2026-09-23T00:58:54.726957+00:00"
+  },
+  {
+    "id": "23339fe4-4ecb-41a3-942f-92df249bb416",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "Multiple Matches Detected (2 Candidates)",
+    "body": "You have 2 potential matches identified across campus for your lost reports.",
+    "data": {
+      "count": 2,
+      "match_id": "876c298a-52ee-44f7-8c58-36329b275cc3",
+      "match_ids": [
+        "f37203b4-8b95-498b-b2c5-8bd942e7418b",
+        "876c298a-52ee-44f7-8c58-36329b275cc3"
+      ],
+      "report_id": "9470f560-49d7-4879-8fd9-c3a6e5dc5a9c"
+    },
+    "read": false,
+    "created_at": "2026-09-25T12:06:01.818+00:00"
+  },
+  {
+    "id": "0cd067a3-16e3-4d14-98c1-dcd9830df9cc",
+    "user_id": "a3333333-3333-3333-3333-333333333333",
+    "type": "match",
+    "title": "Multiple Matches Detected (4 Candidates)",
+    "body": "You have 4 potential matches identified across campus for your lost reports.",
+    "data": {
+      "count": 4,
+      "match_id": "e657696d-8bca-44b5-b404-8dab5d53c127",
+      "match_ids": [
+        "d1a9fd5c-5ff3-4c71-8b1a-e764fd5f4145",
+        "4a927cba-1df3-4b26-9cdc-5e8333b8f3ad",
+        "ddb90b0b-74d3-4a59-bae5-7bdb6e397004",
+        "e657696d-8bca-44b5-b404-8dab5d53c127"
+      ],
+      "report_id": "9fd92725-64e5-4c51-ae28-d5ccc607b3fb"
+    },
+    "read": false,
+    "created_at": "2026-09-25T12:06:13.456+00:00"
+  },
+  {
+    "id": "83b09b1d-5ce6-40e5-b0cb-7e6b686afc42",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-82823 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-82823",
+      "match_id": "4b630fb3-8d5d-4ee8-8046-66101c557dc9"
+    },
+    "read": true,
+    "created_at": "2026-09-23T00:58:55.054193+00:00"
+  },
+  {
+    "id": "bec0b9f0-af26-4b7d-a1f0-7d622bd6b9e6",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~81% match)",
+    "body": "A candidate for your report \"Found Casio fx-991CW Calculator\" has been identified on campus.",
+    "data": {
+      "match_id": "4b630fb3-8d5d-4ee8-8046-66101c557dc9",
+      "report_id": "3d470e9b-23ee-4598-b509-8575a6ed167a"
+    },
+    "read": true,
+    "created_at": "2026-09-23T00:58:54.907443+00:00"
+  },
+  {
+    "id": "c2023a28-9484-4440-a876-c3c614d915c1",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~85% match)",
+    "body": "A candidate for your report \"Found Silver Dell Inspiron Laptop in Library\" has been identified on campus.",
+    "data": {
+      "match_id": "5f78826a-23ca-4a03-8172-1e2250c1e3c9",
+      "report_id": "c84d51e9-9533-4c4d-9549-88a6e9fe6360"
+    },
+    "read": false,
+    "created_at": "2026-09-23T04:32:01.285806+00:00"
+  },
+  {
+    "id": "35ab40f3-d2e7-40cf-83d2-55be6abe893f",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-18056 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-18056",
+      "match_id": "5fe1a4b8-e406-4164-9fd2-8f1bde341acd"
+    },
+    "read": false,
+    "created_at": "2026-09-23T04:32:02.131336+00:00"
+  },
+  {
+    "id": "3f3f4903-1d98-48fe-9826-86313e8241fb",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~85% match)",
+    "body": "A candidate for your report \"Dell Inspiron 15 5000 Series Silver Laptop\" has been identified on campus.",
+    "data": {
+      "match_id": "e29d2b41-a0e7-4caa-b024-348bfe48052d",
+      "report_id": "d2df71f9-29ea-4ad4-a3da-7f7a1ee40d6b"
+    },
+    "read": false,
+    "created_at": "2026-09-23T05:57:51.158909+00:00"
+  },
+  {
+    "id": "6711e58e-c535-4d32-bcb1-64a8aa954bf6",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~85% match)",
+    "body": "A candidate for your report \"Found Silver Dell Inspiron Laptop in Library\" has been identified on campus.",
+    "data": {
+      "match_id": "e74a055d-d0d3-419b-bb3f-5393f44fa500",
+      "report_id": "de09d165-99e8-4306-9c6f-fb865ca8ca1b"
+    },
+    "read": false,
+    "created_at": "2026-09-23T05:57:54.006782+00:00"
+  },
+  {
+    "id": "58372ec7-1edb-453a-91c6-6903b9b1d403",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-92919 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-92919",
+      "match_id": "5fe1a4b8-e406-4164-9fd2-8f1bde341acd"
+    },
+    "read": true,
+    "created_at": "2026-09-23T05:57:56.304911+00:00"
+  },
+  {
+    "id": "93933aa7-f5b7-4a78-ac8c-b8dd91165d16",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-73556 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-73556",
+      "match_id": "5fe1a4b8-e406-4164-9fd2-8f1bde341acd"
+    },
+    "read": true,
+    "created_at": "2026-09-25T12:06:18.003878+00:00"
+  },
+  {
+    "id": "3531b650-cf75-4854-ba55-8695d12d653d",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "New Match Detected (~80% match)",
+    "body": "A candidate for your report \"Scientific Casio fx-991CW Calculator\" has been identified on campus.",
+    "data": {
+      "count": 1,
+      "match_id": "699b4032-052e-4141-8432-0576a6348381",
+      "report_id": "4b1d8fdd-1dfa-45be-b18c-377893824837"
+    },
+    "read": false,
+    "created_at": "2026-09-25T20:59:21.057931+00:00"
+  },
+  {
+    "id": "81cde6aa-444c-467a-93ce-2b3254c2be4b",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-28267 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-28267",
+      "match_id": "match-001"
+    },
+    "read": true,
+    "created_at": "2026-09-29T04:20:14.030098+00:00"
+  },
+  {
+    "id": "a1eda8cc-acdf-46e7-9631-25389b7efa6a",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Staff Review Approved — Claim Verified",
+    "body": "Campus security verified your claim. Present token VIT-REC-92954 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-92954",
+      "match_id": "5fe1a4b8-e406-4164-9fd2-8f1bde341acd"
+    },
+    "read": false,
+    "created_at": "2026-09-29T04:24:09.039416+00:00"
+  },
+  {
+    "id": "6005b162-7dc7-4bd7-9f27-4f96dabc2654",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Staff Review Approved — Claim Verified",
+    "body": "Campus security verified your claim. Present token VIT-REC-81199 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-81199",
+      "match_id": "5fe1a4b8-e406-4164-9fd2-8f1bde341acd"
+    },
+    "read": false,
+    "created_at": "2026-09-29T04:24:10.615593+00:00"
+  },
+  {
+    "id": "7ffb8555-1caa-431b-9b39-b5e3bb5fe1b5",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-62908 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-62908",
+      "match_id": "match-001"
+    },
+    "read": false,
+    "created_at": "2026-09-29T04:53:33.648377+00:00"
+  },
+  {
+    "id": "c5cd9323-0810-475e-9dfc-84e4e143167b",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-49035 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-49035",
+      "match_id": "match-001"
+    },
+    "read": false,
+    "created_at": "2026-09-29T04:53:50.651509+00:00"
+  },
+  {
+    "id": "d7fffe8a-9980-4913-a6bb-499735126c81",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-66876 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-66876",
+      "match_id": "match-001"
+    },
+    "read": true,
+    "created_at": "2026-09-29T04:55:08.851905+00:00"
+  },
+  {
+    "id": "bb5bda78-b893-46ad-888e-7e0c75d1ddbc",
+    "user_id": "a3333333-3333-3333-3333-333333333333",
+    "type": "match",
+    "title": "New Match Detected (~72% match)",
+    "body": "A candidate for your report \"Charger\" has been identified on campus.",
+    "data": {
+      "count": 1,
+      "match_id": "8ea38b1b-1aca-4911-905b-71bf8e94d549",
+      "report_id": "4178098f-8df8-4cea-ad55-122a9b36c765"
+    },
+    "read": false,
+    "created_at": "2026-09-29T05:16:44.047803+00:00"
+  },
+  {
+    "id": "5bbb0079-571c-4530-8c8c-6650de51c644",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "match",
+    "title": "Multiple Matches Detected (2 Candidates)",
+    "body": "You have 2 potential matches identified across campus for your lost reports.",
+    "data": {
+      "count": 2,
+      "match_id": "30bfc4ad-9984-43d3-b6ee-dfd1d4ea5c4f",
+      "match_ids": [
+        "969f25d3-d607-4f4f-9e31-95527865f6e6",
+        "30bfc4ad-9984-43d3-b6ee-dfd1d4ea5c4f"
+      ],
+      "report_id": "b1014335-0bc1-4303-86d2-6b1b40687e86"
+    },
+    "read": false,
+    "created_at": "2026-09-29T05:21:39.84+00:00"
+  },
+  {
+    "id": "1bdb5699-6b5a-4422-a9b5-fa169e6890da",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "verification",
+    "title": "Ownership Proof Verified — Ready for Pickup",
+    "body": "Your ownership claim has been verified. Present token VIT-REC-80810 at the custody desk for handover.",
+    "data": {
+      "token": "VIT-REC-80810",
+      "match_id": "match-001"
+    },
+    "read": false,
+    "created_at": "2026-10-05T19:20:34.530474+00:00"
+  },
+  {
+    "id": "db2562bd-1b70-4357-b56e-1938d0a77388",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "system",
+    "title": "Case Escalated to Security Desk",
+    "body": "Your report for \"Debug Stylus Pen 1791231129241\" has been forwarded to campus security for manual review. A staff member is now reviewing your case.",
+    "data": {
+      "status": "pending",
+      "report_id": "531b8b72-4fea-4b40-9a91-4cf8908d05e2",
+      "escalation_id": "esc-tcbi69nl"
+    },
+    "read": false,
+    "created_at": "2026-10-05T20:12:13.265383+00:00"
+  },
+  {
+    "id": "966980f5-4ee1-4072-b833-1088cd9ffbc5",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "system",
+    "title": "Case Escalated to Security Desk",
+    "body": "Your report for \"Dell Precision Active Stylus Pen\" has been forwarded to campus security for manual review. A staff member is now reviewing your case.",
+    "data": {
+      "status": "pending",
+      "report_id": "afb16aa7-fd99-4d06-b89f-c8e85712429d",
+      "escalation_id": "esc-tx4o8pby"
+    },
+    "read": false,
+    "created_at": "2026-10-05T20:13:25.736529+00:00"
+  },
+  {
+    "id": "5ec4f905-17e6-425f-986a-ff4cbefac686",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "system",
+    "title": "Security Desk Case In Review",
+    "body": "A campus security officer is actively investigating your escalated report for \"your item\".",
+    "data": {
+      "status": "reviewing",
+      "escalation_id": "esc-tx4o8pby"
+    },
+    "read": false,
+    "created_at": "2026-10-05T20:13:32.430462+00:00"
+  },
+  {
+    "id": "73827105-ae12-4b45-b3cb-9edca48aed87",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "system",
+    "title": "Case Escalated to Security Desk",
+    "body": "Your report for \"Dell Precision Active Stylus Pen\" has been forwarded to campus security for manual review. A staff member is now reviewing your case.",
+    "data": {
+      "status": "pending",
+      "report_id": "1e27fd02-9cd9-4ee7-9c7b-86c998e258d6",
+      "escalation_id": "esc-8xlm6yj4"
+    },
+    "read": false,
+    "created_at": "2026-10-05T20:17:36.162577+00:00"
+  },
+  {
+    "id": "4064ccf9-4b39-4663-bc3a-565ab0879757",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "system",
+    "title": "Security Desk Case In Review",
+    "body": "A campus security officer is actively investigating your escalated report for \"your item\".",
+    "data": {
+      "status": "reviewing",
+      "escalation_id": "esc-8xlm6yj4"
+    },
+    "read": false,
+    "created_at": "2026-10-05T20:17:42.898136+00:00"
+  },
+  {
+    "id": "b98c9933-13a0-4f02-bb45-0f4d378f25c5",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "system",
+    "title": "Case Escalated to Security Desk",
+    "body": "Your report for \"Dell Precision Active Stylus Pen\" has been forwarded to campus security for manual review. A staff member is now reviewing your case.",
+    "data": {
+      "status": "pending",
+      "report_id": "d40a9fb4-83ce-45dd-ab56-c64424d483f5",
+      "escalation_id": "esc-t5v926xm"
+    },
+    "read": false,
+    "created_at": "2026-10-05T20:19:59.768146+00:00"
+  },
+  {
+    "id": "f73f4966-884f-48f3-902f-5261a2cf556d",
+    "user_id": "a1111111-1111-1111-1111-111111111111",
+    "type": "system",
+    "title": "Security Desk Case In Review",
+    "body": "A campus security officer is actively investigating your escalated report for \"your item\".",
+    "data": {
+      "status": "reviewing",
+      "escalation_id": "esc-t5v926xm"
+    },
+    "read": false,
+    "created_at": "2026-10-05T20:20:06.765524+00:00"
+  }
+]

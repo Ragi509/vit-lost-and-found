@@ -1,0 +1,90 @@
+[
+  {
+    "id": "4b630fb3-8d5d-4ee8-8046-66101c557dc9",
+    "lost_report_id": "ddbd3686-731c-4802-91dc-d9c3b4e6cfca",
+    "found_report_id": "3d470e9b-23ee-4598-b509-8575a6ed167a",
+    "text_score": 0.7813,
+    "image_score": 0,
+    "category_score": 1,
+    "confidence_score": 0.8141,
+    "status": "claimed",
+    "created_at": "2026-09-23T00:58:54.855538+00:00"
+  },
+  {
+    "id": "5f78826a-23ca-4a03-8172-1e2250c1e3c9",
+    "lost_report_id": "83e9acb2-7f56-4dfc-8ca2-10f296d8f682",
+    "found_report_id": "c84d51e9-9533-4c4d-9549-88a6e9fe6360",
+    "text_score": 0.8187,
+    "image_score": 0.85,
+    "category_score": 1,
+    "confidence_score": 0.8494,
+    "status": "suggested",
+    "created_at": "2026-09-23T04:32:01.189257+00:00"
+  },
+  {
+    "id": "e29d2b41-a0e7-4caa-b024-348bfe48052d",
+    "lost_report_id": "d2df71f9-29ea-4ad4-a3da-7f7a1ee40d6b",
+    "found_report_id": "c84d51e9-9533-4c4d-9549-88a6e9fe6360",
+    "text_score": 0.8187,
+    "image_score": 0.85,
+    "category_score": 1,
+    "confidence_score": 0.8494,
+    "status": "suggested",
+    "created_at": "2026-09-23T05:57:49.877509+00:00"
+  },
+  {
+    "id": "e74a055d-d0d3-419b-bb3f-5393f44fa500",
+    "lost_report_id": "83e9acb2-7f56-4dfc-8ca2-10f296d8f682",
+    "found_report_id": "de09d165-99e8-4306-9c6f-fb865ca8ca1b",
+    "text_score": 0.8187,
+    "image_score": 0.85,
+    "category_score": 1,
+    "confidence_score": 0.8494,
+    "status": "suggested",
+    "created_at": "2026-09-23T05:57:52.808953+00:00"
+  },
+  {
+    "id": "f37203b4-8b95-498b-b2c5-8bd942e7418b",
+    "lost_report_id": "9470f560-49d7-4879-8fd9-c3a6e5dc5a9c",
+    "found_report_id": "9fd92725-64e5-4c51-ae28-d5ccc607b3fb",
+    "text_score": 0.74,
+    "image_score": 0,
+    "category_score": 1,
+    "confidence_score": 0.779,
+    "status": "suggested",
+    "created_at": "2026-09-25T11:58:58.240719+00:00"
+  },
+  {
+    "id": "876c298a-52ee-44f7-8c58-36329b275cc3",
+    "lost_report_id": "8cfc214e-3b3d-4ef9-b922-05fb4dabb7c6",
+    "found_report_id": "9fd92725-64e5-4c51-ae28-d5ccc607b3fb",
+    "text_score": 0.7591,
+    "image_score": 0.85,
+    "category_score": 1,
+    "confidence_score": 0.8195,
+    "status": "suggested",
+    "created_at": "2026-09-25T12:06:01.207169+00:00"
+  },
+  {
+    "id": "969f25d3-d607-4f4f-9e31-95527865f6e6",
+    "lost_report_id": "b1014335-0bc1-4303-86d2-6b1b40687e86",
+    "found_report_id": "fd178bc6-e3b3-493c-b89b-f064203841b0",
+    "text_score": 0.68,
+    "image_score": 0,
+    "category_score": 1,
+    "confidence_score": 0.728,
+    "status": "suggested",
+    "created_at": "2026-09-29T05:14:45.491492+00:00"
+  },
+  {
+    "id": "30bfc4ad-9984-43d3-b6ee-dfd1d4ea5c4f",
+    "lost_report_id": "fb756017-e8fd-4eeb-a198-809ec3ba83eb",
+    "found_report_id": "fd178bc6-e3b3-493c-b89b-f064203841b0",
+    "text_score": 0.68,
+    "image_score": 0,
+    "category_score": 1,
+    "confidence_score": 0.728,
+    "status": "suggested",
+    "created_at": "2026-09-29T05:21:39.304923+00:00"
+  }
+]

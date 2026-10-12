@@ -3,15 +3,22 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const embeddingUrl = process.env.EMBEDDING_SERVICE_URL || "https://vit-lost-found-embeddings.onrender.com";
-  const apiKey = process.env.EMBEDDING_SERVICE_API_KEY || "vit_sec_embed_live_948fbc2a10e7b4382c7";
+  const embeddingUrl = process.env.EMBEDDING_SERVICE_URL;
+  const apiKey = process.env.EMBEDDING_SERVICE_API_KEY;
+
+  if (!embeddingUrl) {
+    return NextResponse.json(
+      { status: "error", error: "EMBEDDING_SERVICE_URL environment variable is not configured" },
+      { status: 500 }
+    );
+  }
 
   const t0 = Date.now();
   try {
     const res = await fetch(`${embeddingUrl}/health`, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}`, "X-Embedding-Service-Key": apiKey } : {}),
       },
       signal: AbortSignal.timeout(15000),
     });
@@ -20,7 +27,7 @@ export async function GET(request: Request) {
     const data = await res.json().catch(() => ({}));
 
     return NextResponse.json({
-      status: "ok",
+      status: res.ok ? "ok" : "degraded",
       target: embeddingUrl,
       httpStatus: res.status,
       elapsedMs: elapsed,

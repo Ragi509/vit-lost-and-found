@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Lock, ShieldCheck, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -9,44 +9,51 @@ import { PhotoUpload } from "@/components/PhotoUpload";
 import { createClient } from "@/lib/supabase/client";
 import { getStoredSession } from "@/lib/auth/session";
 
-const CAMPUS_LOCATIONS = [
-  "Central Library - 2nd Floor Reading Room",
-  "Central Library - Ground Floor Digital Section",
-  "D-Block - 3rd Floor Computer Lab 304",
-  "D-Block - 1st Floor Electronics Lab",
-  "B-Block - Mechanical Workshop Area",
-  "Sharad Arena / Open Amphitheatre",
-  "Sports Complex - Badminton Court Bench",
-  "Sports Complex - Gymkhana Hall",
-  "Student Cafeteria / Canteen Main Area",
-  "Saraswati Hostel Block A - Common Room",
-  "Main Security Gate 1 Entrance",
-];
-
-const ITEM_CATEGORIES = [
-  "Academic Tools & Calculators",
-  "Identity Cards & Campus Keys",
-  "Electronics & Audio",
-  "Laptops & Accessories",
-  "Bags & Backpacks",
-  "Clothing & Eyewear",
-  "Books & Course Notes",
-  "Other Belongings",
-];
-
 export default function ReportLostPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const [categories, setCategories] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+
   const [formData, setFormData] = useState({
     itemName: "",
-    category: ITEM_CATEGORIES[0],
+    category: "",
     description: "",
     dateTime: "",
-    location: CAMPUS_LOCATIONS[0],
+    location: "",
     privateSecret: "",
   });
+
+  useEffect(() => {
+    async function loadReferenceData() {
+      try {
+        const res = await fetch("/api/reference-data");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.categories) && data.categories.length > 0) {
+            setCategories(data.categories);
+            setFormData((prev) => ({
+              ...prev,
+              category: prev.category || data.categories[0],
+            }));
+          }
+          if (Array.isArray(data.locations) && data.locations.length > 0) {
+            setLocations(data.locations);
+            setFormData((prev) => ({
+              ...prev,
+              location: prev.location || data.locations[0],
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load reference data:", err);
+      }
+    }
+    loadReferenceData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,10 +144,8 @@ export default function ReportLostPage() {
       console.warn("Local storage cache warning:", e);
     }
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      router.push("/matches");
-    }, 2400);
+    setIsSubmitting(false);
+    router.push("/matches");
   };
 
   if (isSubmitting) {
@@ -187,7 +192,7 @@ export default function ReportLostPage() {
               label="Item Name & Model"
               id="itemName"
               type="text"
-              placeholder="e.g. TI-84 Plus CE Graphing Calculator"
+              placeholder="e.g. Dell Inspiron 15 3520 laptop (silver-grey)"
               value={formData.itemName}
               onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
               required
@@ -203,8 +208,9 @@ export default function ReportLostPage() {
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  required
                 >
-                  {ITEM_CATEGORIES.map((c) => (
+                  {categories.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
@@ -218,8 +224,9 @@ export default function ReportLostPage() {
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  required
                 >
-                  {CAMPUS_LOCATIONS.map((l) => (
+                  {locations.map((l) => (
                     <option key={l} value={l}>{l}</option>
                   ))}
                 </select>

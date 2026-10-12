@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -9,53 +9,60 @@ import { PhotoUpload } from "@/components/PhotoUpload";
 import { createClient } from "@/lib/supabase/client";
 import { getStoredSession } from "@/lib/auth/session";
 
-const CAMPUS_LOCATIONS = [
-  "Central Library - 2nd Floor Reading Room",
-  "Central Library - Ground Floor Digital Section",
-  "D-Block - 3rd Floor Computer Lab 304",
-  "D-Block - 1st Floor Electronics Lab",
-  "B-Block - Mechanical Workshop Area",
-  "Sharad Arena / Open Amphitheatre",
-  "Sports Complex - Badminton Court Bench",
-  "Sports Complex - Gymkhana Hall",
-  "Student Cafeteria / Canteen Main Area",
-  "Saraswati Hostel Block A - Common Room",
-  "Main Security Gate 1 Entrance",
-];
-
-const HOLDING_LOCATIONS = [
-  "Central Library Helpdesk (Ground Floor)",
-  "Main Security Gate 1 Security Office",
-  "D-Block Security Counter (Ground Floor)",
-  "Student Activities Center (SAC Desk)",
-  "Hostel Warden Office (Saraswati Block)",
-];
-
-const ITEM_CATEGORIES = [
-  "Academic Tools & Calculators",
-  "Identity Cards & Campus Keys",
-  "Electronics & Audio",
-  "Laptops & Accessories",
-  "Bags & Backpacks",
-  "Clothing & Eyewear",
-  "Books & Course Notes",
-  "Other Belongings",
-];
-
 export default function ReportFoundPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const [categories, setCategories] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [holdingLocations, setHoldingLocations] = useState<string[]>([]);
+
   const [formData, setFormData] = useState({
     itemName: "",
-    category: ITEM_CATEGORIES[0],
+    category: "",
     description: "",
     dateTime: "",
-    location: CAMPUS_LOCATIONS[0],
-    holdingLocation: HOLDING_LOCATIONS[0],
+    location: "",
+    holdingLocation: "",
     finderNotes: "",
   });
+
+  useEffect(() => {
+    async function loadReferenceData() {
+      try {
+        const res = await fetch("/api/reference-data");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.categories) && data.categories.length > 0) {
+            setCategories(data.categories);
+            setFormData((prev) => ({
+              ...prev,
+              category: prev.category || data.categories[0],
+            }));
+          }
+          if (Array.isArray(data.locations) && data.locations.length > 0) {
+            setLocations(data.locations);
+            setFormData((prev) => ({
+              ...prev,
+              location: prev.location || data.locations[0],
+            }));
+          }
+          if (Array.isArray(data.holdingLocations) && data.holdingLocations.length > 0) {
+            setHoldingLocations(data.holdingLocations);
+            setFormData((prev) => ({
+              ...prev,
+              holdingLocation: prev.holdingLocation || data.holdingLocations[0],
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load reference data:", err);
+      }
+    }
+    loadReferenceData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,10 +155,8 @@ export default function ReportFoundPage() {
       console.warn("Local storage cache warning:", e);
     }
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      router.push("/dashboard");
-    }, 2400);
+    setIsSubmitting(false);
+    router.push("/browse");
   };
 
   if (isSubmitting) {
@@ -159,11 +164,11 @@ export default function ReportFoundPage() {
       <div className="max-w-xl mx-auto py-12">
         <LoadingState
           steps={[
-            "Registering recovered item intake record...",
+            "Recording found item intake securely in database...",
             photoFile ? "Uploading high-resolution photograph to encrypted item-photos storage..." : "Processing item metadata...",
-            "Indexing physical holding desk location...",
-            "Triggering CLIP multi-modal embedding pipeline...",
-            "Querying outstanding lost item registry for immediate candidate pairing...",
+            "Extracting visual features and generating 384-dimensional text embedding...",
+            "Scanning live campus lost item reports via pgvector similarity search...",
+            "Registering custody record at designated security desk...",
           ]}
         />
       </div>
@@ -185,7 +190,7 @@ export default function ReportFoundPage() {
           Report a Found Item
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-          Thank you for turning in a lost item. Details entered here will help security desk verify the legitimate owner.
+          Help return lost items to their owners. Public descriptions should include observable physical details, while custody is tracked at designated desks.
         </p>
       </div>
 
@@ -194,10 +199,10 @@ export default function ReportFoundPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Item Name */}
             <Input
-              label="Found Item Title"
+              label="Item Name & Brief Identifier"
               id="itemName"
               type="text"
-              placeholder="e.g. Blue HP Pavilion Laptop Charger"
+              placeholder="e.g. Dell laptop with charger"
               value={formData.itemName}
               onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
               required
@@ -213,8 +218,9 @@ export default function ReportFoundPage() {
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  required
                 >
-                  {ITEM_CATEGORIES.map((c) => (
+                  {categories.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
@@ -228,8 +234,9 @@ export default function ReportFoundPage() {
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  required
                 >
-                  {CAMPUS_LOCATIONS.map((l) => (
+                  {locations.map((l) => (
                     <option key={l} value={l}>{l}</option>
                   ))}
                 </select>
@@ -259,8 +266,9 @@ export default function ReportFoundPage() {
                 value={formData.holdingLocation}
                 onChange={(e) => setFormData({ ...formData, holdingLocation: e.target.value })}
                 className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                required
               >
-                {HOLDING_LOCATIONS.map((h) => (
+                {holdingLocations.map((h) => (
                   <option key={h} value={h}>{h}</option>
                 ))}
               </select>
@@ -269,10 +277,11 @@ export default function ReportFoundPage() {
               </p>
             </div>
 
+            {/* Public Description */}
             <Textarea
-              label="Public Physical Description"
+              label="Public Visual Description"
               id="description"
-              placeholder="State color, brand, condition, and any external markings that help the owner identify it..."
+              placeholder="Describe color, general brand, sleeve or accessories, and condition..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
@@ -280,31 +289,33 @@ export default function ReportFoundPage() {
 
             {/* Responsive Photo Upload Control */}
             <PhotoUpload
-              label="Item Photograph (Recommended for AI Matching)"
-              sublabel="Click or drag photo here (Max 5MB • JPG, PNG, WEBP)"
+              label="Photograph of Found Item"
+              sublabel="Upload a clear photograph taken at the location (Max 5MB • JPG, PNG, WEBP)"
               value={photoFile}
               onChange={setPhotoFile}
               previewUrl={previewUrl}
               onPreviewChange={setPreviewUrl}
             />
 
+            {/* Confidential Finder Notes (Never exposed to claimant) */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Finder&apos;s Confidential Notes (Optional)
+                Confidential Staff / Custody Notes (Internal Only)
               </label>
               <Textarea
                 id="finderNotes"
-                placeholder="Internal notes, e.g. handed over to Officer Shinde at 4:30 PM..."
+                placeholder="Any private markings noticed that should NOT be visible to claimants during search (e.g. sticker placement, serial number, lock screen wallpaper)..."
                 value={formData.finderNotes}
                 onChange={(e) => setFormData({ ...formData, finderNotes: e.target.value })}
               />
               <p className="text-[11px] text-slate-500">
-                Kept confidential between finder and campus security staff.
+                These notes are confidential to campus custody staff and will never be displayed on public browse pages.
               </p>
             </div>
 
+            {/* Submit CTA */}
             <Button type="submit" variant="primary" size="lg" className="w-full">
-              <span>Submit Found Item Record</span>
+              <span>Submit Found Item & Match Lost Reports</span>
             </Button>
           </form>
         </CardContent>

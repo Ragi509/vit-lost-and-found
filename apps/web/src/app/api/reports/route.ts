@@ -1,8 +1,48 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { computeClientMatchScore } from "@/lib/api/matching";
+import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+async function fetchEmbeddingVector(text: string): Promise<number[] | null> {
+  const serviceUrl = process.env.EMBEDDING_SERVICE_URL;
+  const apiKey = process.env.EMBEDDING_SERVICE_API_KEY;
+  if (!serviceUrl) return null;
+
+  try {
+    const res = await fetch(`${serviceUrl}/embed/text`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiKey ? { "X-Embedding-Service-Key": apiKey } : {}),
+      },
+      body: JSON.stringify({ text }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.vector)) return data.vector;
+      if (Array.isArray(data.embedding)) return data.embedding;
+    }
+  } catch (e) {
+    console.warn("Embedding service lookup notice:", e);
+  }
+  return null;
+}
 
 export async function GET(request: Request) {
   try {
@@ -63,39 +103,53 @@ export async function POST(request: Request) {
     // 1. Ensure reporter user exists in public.users with genuine UUID
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let validUserId = reporterId && isUuid.test(reporterId) ? reporterId : null;
-    if (!validUserId) {
-      const email = reporterEmail || "ragini.kengale24@vit.edu";
+    if (!validUserId && reporterEmail) {
       const { data: userRecord } = await supabase
         .from("users")
         .select("id")
-        .eq("vit_email", email)
+        .eq("vit_email", reporterEmail.trim().toLowerCase())
         .maybeSingle();
 
       if (userRecord?.id) {
         validUserId = userRecord.id;
-      } else {
-        validUserId = "a1111111-1111-1111-1111-111111111111"; // Fallback to primary seed user
       }
     }
 
-    // 2. Insert report into public.reports
+    if (!validUserId) {
+      return NextResponse.json(
+        { error: "Unauthorized: Valid authenticated reporter session required" },
+        { status: 401 }
+      );
+    }
+
+    // 2. Fetch text embedding if microservice is reachable
+    const reportText = `${itemName}. ${description || ""}`;
+    const textVector = await fetchEmbeddingVector(reportText);
+
+    // 3. Insert report into public.reports
     const reportId = crypto.randomUUID();
+    const reportInsertPayload: any = {
+      id: reportId,
+      reporter_id: validUserId,
+      type,
+      item_name: itemName,
+      category,
+      description: description || itemName,
+      photo_url: photoUrl || null,
+      location: location || "Campus Location",
+      date_time: dateTime || new Date().toISOString(),
+      status: "searching",
+      holding_location: holdingLocation || null,
+      finder_notes: finderNotes || null,
+    };
+
+    if (textVector) {
+      reportInsertPayload.text_vector = textVector;
+    }
+
     const { data: newReport, error: insertError } = await supabase
       .from("reports")
-      .insert({
-        id: reportId,
-        reporter_id: validUserId,
-        type,
-        item_name: itemName,
-        category,
-        description: description || itemName,
-        photo_url: photoUrl || null,
-        location: location || "Campus Location",
-        date_time: dateTime || new Date().toISOString(),
-        status: "searching",
-        holding_location: holdingLocation || null,
-        finder_notes: finderNotes || null,
-      })
+      .insert(reportInsertPayload)
       .select()
       .single();
 
@@ -104,7 +158,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // 3. Scan for matching opposite reports in same or related category
+    // 4. If private distinguishing detail is provided (for lost report), encrypt and store into report_secrets
+    if (type === "lost" && privateSecret) {
+      try {
+        let secretEmbedding = await fetchEmbeddingVector(privateSecret);
+        if (!secretEmbedding) {
+          secretEmbedding = Array(384).fill(0.001);
+        }
+
+        // Encrypt secret with AES-256-CBC into bytea hex string
+        const encKey = crypto.createHash("sha256").update("vit_lost_and_found_sec_key_2026").digest();
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv("aes-256-cbc", encKey, iv);
+        const ciphertext = Buffer.concat([iv, cipher.update(privateSecret, "utf8"), cipher.final()]);
+        const byteaHex = "\\x" + ciphertext.toString("hex");
+
+        await supabase.from("report_secrets").insert({
+          report_id: reportId,
+          encrypted_distinguishing_detail: byteaHex,
+          detail_embedding: secretEmbedding,
+        });
+      } catch (secErr) {
+        console.warn("Notice: could not store report_secret:", secErr);
+      }
+    }
+
+    // 5. Scan for matching opposite reports in same or related category
     const targetType = type === "lost" ? "found" : "lost";
     const { data: oppositeReports } = await supabase
       .from("reports")
@@ -118,24 +197,30 @@ export async function POST(request: Request) {
 
     if (oppositeReports && oppositeReports.length > 0) {
       for (const candidate of oppositeReports) {
-        // Calculate semantic similarity
-        const itemA = itemName.toLowerCase();
-        const itemB = candidate.item_name.toLowerCase();
-        const descA = (description || "").toLowerCase();
-        const descB = (candidate.description || "").toLowerCase();
+        let textScore = 0.50;
 
-        // Check token overlap
-        const wordsA = new Set([...itemA.split(/\s+/), ...descA.split(/\s+/)].filter((w) => w.length > 2));
-        const wordsB = new Set([...itemB.split(/\s+/), ...descB.split(/\s+/)].filter((w) => w.length > 2));
-        let common = 0;
-        wordsA.forEach((w) => {
-          if (wordsB.has(w)) common++;
-        });
+        // Compare vector embeddings if available
+        if (textVector && candidate.text_vector) {
+          textScore = cosineSimilarity(textVector, candidate.text_vector);
+        } else {
+          // Token overlap comparison
+          const itemA = itemName.toLowerCase();
+          const itemB = candidate.item_name.toLowerCase();
+          const descA = (description || "").toLowerCase();
+          const descB = (candidate.description || "").toLowerCase();
 
-        const overlapRatio = wordsA.size > 0 ? common / Math.max(wordsA.size, wordsB.size) : 0;
-        const textScore = Math.min(1.0, Math.max(0.45, overlapRatio > 0 ? 0.65 + overlapRatio * 0.3 : 0.52));
+          const wordsA = new Set([...itemA.split(/\s+/), ...descA.split(/\s+/)].filter((w) => w.length > 2));
+          const wordsB = new Set([...itemB.split(/\s+/), ...descB.split(/\s+/)].filter((w) => w.length > 2));
+          let common = 0;
+          wordsA.forEach((w) => {
+            if (wordsB.has(w)) common++;
+          });
+
+          const overlapRatio = wordsA.size > 0 ? common / Math.max(wordsA.size, wordsB.size) : 0;
+          textScore = Math.min(1.0, Math.max(0.45, overlapRatio > 0 ? 0.65 + overlapRatio * 0.3 : 0.52));
+        }
+
         const imageScore = photoUrl && candidate.photo_url ? 0.85 : null;
-
         const matchScore = computeClientMatchScore(textScore, imageScore, true);
 
         if (matchScore.confidence_score >= 0.40) {
@@ -143,7 +228,6 @@ export async function POST(request: Request) {
           const foundId = type === "found" ? reportId : candidate.id;
           const lostOwnerId = type === "lost" ? validUserId : candidate.reporter_id;
 
-          // Insert into public.matches
           const matchId = crypto.randomUUID();
           const { data: matchRecord, error: matchError } = await supabase
             .from("matches")
@@ -151,11 +235,11 @@ export async function POST(request: Request) {
               id: matchId,
               lost_report_id: lostId,
               found_report_id: foundId,
-              confidence_score: matchScore.confidence_score,
               text_score: matchScore.text_score,
               image_score: matchScore.image_score || 0,
               category_score: matchScore.category_score,
-              status: "suggested",
+              confidence_score: matchScore.confidence_score,
+              status: "pending_verification",
             })
             .select()
             .single();
@@ -163,10 +247,13 @@ export async function POST(request: Request) {
           if (!matchError && matchRecord) {
             createdMatch = matchRecord;
 
-            // Update reports status to 'matched'
-            await supabase.from("reports").update({ status: "matched" }).in("id", [lostId, foundId]);
+            // Update report statuses to 'matched'
+            await supabase
+              .from("reports")
+              .update({ status: "matched" })
+              .in("id", [lostId, foundId]);
 
-            // Check for an existing unread match notification within recent window (15 mins) to group alerts
+            // Grouped notification check: If user had a match notification in last 15 min, group it
             const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
             const { data: recentNotif } = await supabase
               .from("notifications")
@@ -183,7 +270,7 @@ export async function POST(request: Request) {
               const currentCount = (recentNotif.data?.count as number) || 1;
               const newCount = currentCount + 1;
               const existingMatchIds = recentNotif.data?.match_ids || (recentNotif.data?.match_id ? [recentNotif.data.match_id] : []);
-              
+
               const { data: updatedNotif } = await supabase
                 .from("notifications")
                 .update({
@@ -203,7 +290,6 @@ export async function POST(request: Request) {
 
               createdNotification = updatedNotif || recentNotif;
             } else {
-              // Insert single new notification for the lost report owner
               const notifId = crypto.randomUUID();
               const { data: notifRecord } = await supabase
                 .from("notifications")
@@ -221,7 +307,7 @@ export async function POST(request: Request) {
 
               createdNotification = notifRecord;
             }
-            break; // Matched candidate
+            break; // Matched primary candidate
           }
         }
       }

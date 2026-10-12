@@ -1,9 +1,9 @@
 # VIT Lost & Found — Comprehensive Feature List & Live Verification Matrix
 
-> **Verification Date**: 2026-09-23  
-> **Environment**: Persistent Vercel Production Deployment (`https://vit-lost-and-found-roan.vercel.app`) + Supabase Cloud (`ruvkhuocnixoouphosku.supabase.co`)  
+> **Verification Date**: 2026-10-13  
+> **Environment**: Persistent Vercel Production Deployment (`https://vit-lost-and-found-roan.vercel.app`) + Supabase Cloud Mumbai (`ruvkhuocnixoouphosku.supabase.co`) + Render FastAPI Embedding Microservice (`vit-lost-found-embedding.onrender.com`)  
 > **Repository**: [https://github.com/Ragi509/vit-lost-and-found](https://github.com/Ragi509/vit-lost-and-found)  
-> **Evaluation Criteria**: Every status is assigned based on direct, automated execution against the live running deployment.  
+> **Evaluation Criteria**: Every status is assigned based on direct, automated execution against the live running deployment with zero hardcoded values, zero synthetic seeds, and exactly one real pre-loaded test case.  
 
 ---
 

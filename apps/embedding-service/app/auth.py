@@ -9,9 +9,12 @@ def verify_service_key(
     internal_key: str = Security(API_KEY_HEADER),
     legacy_key: str = Security(LEGACY_KEY_HEADER),
 ):
-    expected_key = os.getenv("EMBEDDING_SERVICE_API_KEY") or os.getenv(
-        "EMBEDDING_SERVICE_SECRET_KEY", "vit_sec_embed_live_948fbc2a10e7b4382c7"
-    )
+    expected_key = os.getenv("EMBEDDING_SERVICE_API_KEY") or os.getenv("EMBEDDING_SERVICE_SECRET_KEY")
+    if not expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Embedding service secret key environment variable not configured",
+        )
     presented_key = internal_key or legacy_key
 
     if not presented_key or presented_key != expected_key:

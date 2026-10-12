@@ -35,9 +35,8 @@ async function fetchEmbeddingVector(text: string): Promise<number[] | null> {
     });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data.embedding)) {
-        return data.embedding;
-      }
+      if (Array.isArray(data.vector)) return data.vector;
+      if (Array.isArray(data.embedding)) return data.embedding;
     }
   } catch (e) {
     console.warn("Embedding service lookup notice:", e);
@@ -82,18 +81,32 @@ export async function POST(request: Request) {
       if (thresholds.escalate_to_admin !== undefined) escalateThreshold = Number(thresholds.escalate_to_admin);
     }
 
-    // 3. Obtain reference secret description or embedding from lost_report / found_report
-    let referenceText = match.lost_report?.description || match.found_report?.description || "";
-
+    // 3. Obtain reference secret embedding or description
     let similarity = 0;
     let comparisonMethod = "microservice_vector_embedding";
     let result: "approved" | "escalated" | "rejected" = "rejected";
 
-    // Call microservice vector embedding cosine calculation
-    const [subVector, refVector] = await Promise.all([
-      fetchEmbeddingVector(submittedSecretText),
-      fetchEmbeddingVector(referenceText),
-    ]);
+    // Check if lost report has an encrypted secret embedding in report_secrets
+    let storedSecretEmbedding: number[] | null = null;
+    if (match.lost_report_id) {
+      const { data: secretRow } = await supabase
+        .from("report_secrets")
+        .select("detail_embedding")
+        .eq("report_id", match.lost_report_id)
+        .maybeSingle();
+
+      if (secretRow?.detail_embedding && Array.isArray(secretRow.detail_embedding)) {
+        storedSecretEmbedding = secretRow.detail_embedding;
+      }
+    }
+
+    const subVector = await fetchEmbeddingVector(submittedSecretText);
+    let refVector = storedSecretEmbedding;
+
+    if (!refVector) {
+      const referenceText = match.lost_report?.description || match.found_report?.description || "";
+      refVector = await fetchEmbeddingVector(referenceText);
+    }
 
     if (subVector && refVector) {
       similarity = cosineSimilarity(subVector, refVector);
@@ -146,29 +159,45 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Insert verification record into public.verifications
+    // 4. Resolve authenticated claimant identifier
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const validClaimantId = claimantId && isUuid.test(claimantId) ? claimantId : match.lost_report?.reporter_id || "a1111111-1111-1111-1111-111111111111";
+    const validClaimantId = claimantId && isUuid.test(claimantId) ? claimantId : match.lost_report?.reporter_id;
 
-    const { data: verifRow, error: insertError } = await supabase
+    if (!validClaimantId) {
+      return NextResponse.json({ error: "Missing or invalid claimant identifier" }, { status: 400 });
+    }
+
+    // 5. Insert verification record into public.verifications
+    const insertPayload: any = {
+      match_id: matchId,
+      claimant_id: validClaimantId,
+      similarity_score: similarity,
+      result,
+      reject_reason: result === "rejected" ? `Vector similarity (${similarity}) below threshold (${escalateThreshold})` : null,
+    };
+
+    // Try inserting with comparison_method column
+    let { data: verifRow, error: insertError } = await supabase
       .from("verifications")
-      .insert({
-        match_id: matchId,
-        claimant_id: validClaimantId,
-        similarity_score: similarity,
-        result,
-      })
+      .insert({ ...insertPayload, comparison_method: comparisonMethod })
       .select()
-      .single();
+      .maybeSingle();
 
     if (insertError) {
-      console.error("Error inserting verification record:", insertError);
+      // Fallback without comparison_method column if schema cache is pending reload
+      const resFallback = await supabase
+        .from("verifications")
+        .insert(insertPayload)
+        .select()
+        .maybeSingle();
+      verifRow = resFallback.data;
     }
+
     const verificationId = verifRow?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "verif-id");
 
     console.log(`[VERIFICATION AUDIT LOG] ID: ${verificationId} | Result: ${result} | Score: ${similarity} | Method: ${comparisonMethod}`);
 
-    // 5. If approved, transition report status to 'recovered'
+    // 6. If approved, transition report status to 'recovered'
     if (result === "approved") {
       if (match?.lost_report_id && match?.found_report_id) {
         await supabase

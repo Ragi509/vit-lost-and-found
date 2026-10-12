@@ -3,14 +3,14 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ArrowRight, AlertCircle, KeyRound } from "lucide-react";
+import { ShieldCheck, ArrowRight, AlertCircle, KeyRound, Lock } from "lucide-react";
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@vit/ui";
 import { Footer } from "@/components/Footer";
 
 export default function StaffLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [staffId, setStaffId] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,19 +18,30 @@ export default function StaffLoginPage() {
     e.preventDefault();
     setError(null);
 
-    if (!email || !staffId) {
-      setError("Please provide your staff email and employee ID.");
+    if (!email || !password) {
+      setError("Please provide your staff email and administrator password.");
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      const sessionObj = { email, staffId, role: "Staff" };
-      localStorage.setItem("vit_staff_session", JSON.stringify(sessionObj));
-      document.cookie = `vit_staff_session=${encodeURIComponent(JSON.stringify(sessionObj))}; path=/; max-age=604800; SameSite=Lax`;
+    try {
+      const res = await fetch("/api/auth/staff-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Staff authentication failed");
+      }
+
+      localStorage.setItem("vit_staff_session", JSON.stringify(data.session));
       router.push("/admin/console");
-    }, 600);
+    } catch (err: any) {
+      setError(err.message || "Failed to authenticate staff session");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,18 +79,18 @@ export default function StaffLoginPage() {
                   label="Staff Institutional Email"
                   id="email"
                   type="email"
-                  placeholder="staff.name@vit.edu"
+                  placeholder="security.head@vit.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
                 <Input
-                  label="Staff ID / PRN Number"
-                  id="staffId"
-                  type="text"
-                  placeholder="VIT-STAFF-001"
-                  value={staffId}
-                  onChange={(e) => setStaffId(e.target.value)}
+                  label="Administrator Password"
+                  id="password"
+                  type="password"
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
                 <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
