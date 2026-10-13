@@ -156,7 +156,7 @@ export default function ReportFoundPage() {
     }
 
     setIsSubmitting(false);
-    router.push("/browse");
+    router.push("/my-reports");
   };
 
   if (isSubmitting) {

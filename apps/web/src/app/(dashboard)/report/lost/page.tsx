@@ -145,7 +145,7 @@ export default function ReportLostPage() {
     }
 
     setIsSubmitting(false);
-    router.push("/matches");
+    router.push("/my-reports");
   };
 
   if (isSubmitting) {

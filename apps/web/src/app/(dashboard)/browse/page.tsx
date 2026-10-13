@@ -97,6 +97,33 @@ export default function BrowsePage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Helper: prepend localStorage-cached items so newly submitted reports appear immediately
+  const mergeLocalItems = (base: CatalogItem[]): CatalogItem[] => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("vit_user_reports") : null;
+      if (!raw) return base;
+      const local: any[] = JSON.parse(raw);
+      const baseIds = new Set(base.map((r) => r.id));
+      const localFormatted: CatalogItem[] = local
+        .filter((r) => !baseIds.has(r.id))
+        .map((r) => ({
+          id: r.id,
+          name: r.item_name || r.name || "Unnamed Item",
+          category: r.category || "Other",
+          type: (r.type === "found" ? "found" : "lost") as "lost" | "found",
+          location: r.location || "Campus",
+          date: r.dateTime ? new Date(r.dateTime).toLocaleDateString() : "Today",
+          status: "searching" as const,
+          holdingLocation: r.holdingLocation,
+          description: r.description || r.item_name || "",
+          photoUrl: r.photo_url || r.photoUrl || null,
+        }));
+      return [...localFormatted, ...base];
+    } catch (_) {
+      return base;
+    }
+  };
+
   const fetchLiveReports = async () => {
     setIsLoading(true);
     try {
@@ -130,16 +157,16 @@ export default function BrowsePage() {
             photoUrl: r.photo_url,
           }));
 
-          setItems(liveFormatted);
+          setItems(mergeLocalItems(liveFormatted));
         } else {
-          setItems(DEMO_CATALOG_ITEMS);
+          setItems(mergeLocalItems(DEMO_CATALOG_ITEMS));
         }
       } else {
-        setItems(DEMO_CATALOG_ITEMS);
+        setItems(mergeLocalItems(DEMO_CATALOG_ITEMS));
       }
     } catch (e) {
       console.warn("Live reports fetch notice:", e);
-      setItems(DEMO_CATALOG_ITEMS);
+      setItems(mergeLocalItems(DEMO_CATALOG_ITEMS));
     } finally {
       setIsLoading(false);
     }

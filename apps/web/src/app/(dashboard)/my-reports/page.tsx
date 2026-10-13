@@ -91,6 +91,32 @@ export default function MyReportsPage() {
   const [escalateSuccessMsg, setEscalateSuccessMsg] = useState<string | null>(null);
   const [escalateErrorMsg, setEscalateErrorMsg] = useState<string | null>(null);
 
+  // Helper: prepend localStorage-cached submissions so newly added items appear immediately
+  const mergeLocalReports = (base: Report[]): Report[] => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("vit_user_reports") : null;
+      if (!raw) return base;
+      const local: any[] = JSON.parse(raw);
+      const baseIds = new Set(base.map((r) => r.id));
+      const localFormatted: Report[] = local
+        .filter((r) => !baseIds.has(r.id))
+        .map((r) => ({
+          id: r.id,
+          name: r.item_name || r.name || "Unnamed Item",
+          category: r.category || "Other",
+          type: (r.type === "found" ? "found" : "lost") as "lost" | "found",
+          location: r.location || "Campus",
+          date: r.dateTime ? new Date(r.dateTime).toLocaleDateString() : "Today",
+          createdAt: r.dateTime || new Date().toISOString(),
+          status: "searching" as const,
+          hasMatch: false,
+        }));
+      return [...localFormatted, ...base];
+    } catch (_) {
+      return base;
+    }
+  };
+
   const fetchMyReports = async () => {
     setIsLoading(true);
     try {
@@ -149,16 +175,18 @@ export default function MyReportsPage() {
             };
           });
 
-          setReports(live);
+          // Merge localStorage cache so newly added reports appear without page refresh
+          let merged = mergeLocalReports(live);
+          setReports(merged);
         } else {
-          setReports(DEMO_CAMPUS_REPORTS);
+          setReports(mergeLocalReports(DEMO_CAMPUS_REPORTS));
         }
       } else {
-        setReports(DEMO_CAMPUS_REPORTS);
+        setReports(mergeLocalReports(DEMO_CAMPUS_REPORTS));
       }
     } catch (e) {
       console.warn("My reports fetch notice:", e);
-      setReports(DEMO_CAMPUS_REPORTS);
+      setReports(mergeLocalReports(DEMO_CAMPUS_REPORTS));
     } finally {
       setIsLoading(false);
     }
