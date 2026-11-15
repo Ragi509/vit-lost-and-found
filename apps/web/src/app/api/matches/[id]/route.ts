@@ -42,3 +42,39 @@ export async function GET(
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = createAdminClient();
+    const { id } = params;
+    const body = await request.json().catch(() => ({}));
+    const { status, action } = body;
+
+    const newStatus = status || (action === "dismiss" ? "dismissed" : "dismissed");
+
+    if (!["suggested", "claimed", "dismissed"].includes(newStatus)) {
+      return NextResponse.json(
+        { error: `Invalid status '${newStatus}'. Allowed: suggested, claimed, dismissed` },
+        { status: 400 }
+      );
+    }
+
+    const { data: updatedMatch, error } = await supabase
+      .from("matches")
+      .update({ status: newStatus })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, match: updatedMatch });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

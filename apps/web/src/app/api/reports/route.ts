@@ -337,7 +337,7 @@ export async function POST(request: Request) {
               image_score: matchScore.image_score || 0,
               category_score: matchScore.category_score,
               confidence_score: matchScore.confidence_score,
-              status: "pending_verification",
+              status: "suggested",
             })
             .select()
             .single();

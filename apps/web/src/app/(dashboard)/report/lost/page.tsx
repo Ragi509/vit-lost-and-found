@@ -63,21 +63,30 @@ export default function ReportLostPage() {
     const session = getStoredSession();
     let uploadedPhotoUrl = previewUrl;
 
-    // If a photo was selected, upload it to Supabase Storage bucket 'item-photos'
+    // Upload to partitioned storage bucket 'lost-item-photos'
+    let photoBucket = "lost-item-photos";
+    let photoPath = `${session?.id || "anonymous"}/${reportId}/photo.jpg`;
     if (photoFile) {
       try {
         const supabase = createClient();
         const fileExt = photoFile.name.split(".").pop() || "jpg";
-        const filePath = `${reportId}/photo.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("item-photos")
-          .upload(filePath, photoFile, {
+        photoPath = `${session?.id || "anonymous"}/${reportId}/photo.${fileExt}`;
+        
+        let { error: uploadError } = await supabase.storage
+          .from("lost-item-photos")
+          .upload(photoPath, photoFile, {
             cacheControl: "3600",
             upsert: true,
           });
 
-        if (!uploadError) {
-          const { data: pubData } = supabase.storage.from("item-photos").getPublicUrl(filePath);
+        if (uploadError) {
+          // Fallback to legacy bucket if needed
+          const legacyPath = `${reportId}/photo.${fileExt}`;
+          await supabase.storage.from("item-photos").upload(legacyPath, photoFile, { cacheControl: "3600", upsert: true });
+          const { data: pubData } = supabase.storage.from("item-photos").getPublicUrl(legacyPath);
+          if (pubData?.publicUrl) uploadedPhotoUrl = pubData.publicUrl;
+        } else {
+          const { data: pubData } = supabase.storage.from("lost-item-photos").getPublicUrl(photoPath);
           if (pubData?.publicUrl) uploadedPhotoUrl = pubData.publicUrl;
         }
       } catch (err) {
@@ -98,6 +107,8 @@ export default function ReportLostPage() {
           category: formData.category,
           description: formData.description,
           photoUrl: uploadedPhotoUrl,
+          photoBucket,
+          photoPath,
           location: formData.location,
           dateTime: formData.dateTime,
           privateSecret: formData.privateSecret,

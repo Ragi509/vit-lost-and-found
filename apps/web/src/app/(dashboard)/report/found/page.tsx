@@ -73,20 +73,30 @@ export default function ReportFoundPage() {
     let uploadedPhotoUrl = previewUrl;
 
     // If photo is present, upload to Supabase Storage bucket 'item-photos'
+    // Upload to partitioned storage bucket 'found-item-photos'
+    let photoBucket = "found-item-photos";
+    let photoPath = `${session?.id || "anonymous"}/${reportId}/photo.jpg`;
     if (photoFile) {
       try {
         const supabase = createClient();
         const fileExt = photoFile.name.split(".").pop() || "jpg";
-        const filePath = `${reportId}/photo.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("item-photos")
-          .upload(filePath, photoFile, {
+        photoPath = `${session?.id || "anonymous"}/${reportId}/photo.${fileExt}`;
+        
+        let { error: uploadError } = await supabase.storage
+          .from("found-item-photos")
+          .upload(photoPath, photoFile, {
             cacheControl: "3600",
             upsert: true,
           });
 
-        if (!uploadError) {
-          const { data: pubData } = supabase.storage.from("item-photos").getPublicUrl(filePath);
+        if (uploadError) {
+          // Fallback to legacy bucket if needed
+          const legacyPath = `${reportId}/photo.${fileExt}`;
+          await supabase.storage.from("item-photos").upload(legacyPath, photoFile, { cacheControl: "3600", upsert: true });
+          const { data: pubData } = supabase.storage.from("item-photos").getPublicUrl(legacyPath);
+          if (pubData?.publicUrl) uploadedPhotoUrl = pubData.publicUrl;
+        } else {
+          const { data: pubData } = supabase.storage.from("found-item-photos").getPublicUrl(photoPath);
           if (pubData?.publicUrl) uploadedPhotoUrl = pubData.publicUrl;
         }
       } catch (err) {
@@ -107,6 +117,8 @@ export default function ReportFoundPage() {
           category: formData.category,
           description: formData.description,
           photoUrl: uploadedPhotoUrl,
+          photoBucket,
+          photoPath,
           location: formData.location,
           dateTime: formData.dateTime,
           holdingLocation: formData.holdingLocation,

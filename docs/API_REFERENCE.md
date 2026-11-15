@@ -209,6 +209,36 @@ Submits a lost or found report, uploads embeddings, and triggers AI matching.
   }
   ```
 
+#### `GET /api/reports/[id]`
+Retrieves full details for a single report.
+- **Auth**: Authenticated session (Owner or Admin)
+
+#### `PATCH /api/reports/[id]`
+Updates editable fields on a report while status is `searching` and no verification/escalation exists.
+- **Auth**: Authenticated session (Owner or Admin)
+- **Status Guards**: Blocked with `409 Conflict` if report status is not `searching` or active claim exists.
+- **Optimistic Locking**: Accepts `updatedAt` to reject stale modifications with `409 Conflict`.
+
+#### `DELETE /api/reports/[id]`
+Atomically removes a report, cleaning up storage images, encrypted secrets, and pending matches.
+- **Auth**: Authenticated session (Owner or Admin)
+- **Guards**: Blocked with `409 Conflict` if report is `recovered` or claim/escalation is active.
+
+---
+
+### 4.1 Campus Browse (`/api/browse`)
+
+#### `GET /api/browse`
+Campus-wide search and filter over active items with strict privacy guarantees.
+- **Auth**: Authenticated VIT member only (`401` if unauthenticated)
+- **Parameters**: `?type=found|lost|all`, `?category=<category>`, `?location=<loc>`, `?search=<text>`
+- **Privacy Enforcement**: Strips `reporter_id`, reporter name/email, confidential notes, secrets, and holding locations. Generates short-lived signed URLs for photos.
+
+#### `POST /api/browse/claim`
+Initiates a claim for a found item from the campus catalog.
+- **Auth**: Authenticated session
+- **Dual Claim Protection**: Routes competing claims from multiple students to campus security review.
+
 ---
 
 ### 5. Matches
@@ -217,6 +247,11 @@ Submits a lost or found report, uploads embeddings, and triggers AI matching.
 Lists match pairs for a given user's active reports.
 - **Auth**: Authenticated session
 - **Parameters**: `?userId=<uuid>`
+
+#### `PATCH /api/matches/[id]`
+Dismisses an AI match when the user marks "Not My Item".
+- **Auth**: Authenticated session
+- **Request**: `{ "status": "dismissed" }`
 - **Response** (`200 OK`):
   ```json
   {

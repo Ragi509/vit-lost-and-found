@@ -2,9 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { PlusCircle, MapPin, Calendar, ArrowRight, CheckCircle2, RefreshCw, ShieldAlert, AlertCircle, X } from "lucide-react";
+import {
+  PlusCircle,
+  MapPin,
+  Calendar,
+  ArrowRight,
+  RefreshCw,
+  ShieldAlert,
+  AlertCircle,
+  X,
+  Edit2,
+  Trash2,
+  Lock,
+  Sparkles,
+} from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardContent, StatusBadge, EmptyState } from "@vit/ui";
 import { getStoredSession } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/client";
 
 interface Report {
   id: string;
@@ -16,6 +30,7 @@ interface Report {
   createdAt?: string;
   status: "searching" | "matched" | "verification_required" | "recovered" | "under_human_review";
   hasMatch?: boolean;
+  photoUrl?: string | null;
   escalation?: {
     id: string;
     status: string;
@@ -23,99 +38,20 @@ interface Report {
   };
 }
 
-const DEMO_CAMPUS_REPORTS: Report[] = [
-  {
-    id: "6a426f9d-091d-4acf-972c-9e9857175c4c",
-    name: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
-    category: "Laptops & Accessories",
-    type: "lost",
-    location: "Mechanical Lab 304, Ground Floor",
-    date: "Today, 10:15 AM",
-    createdAt: new Date().toISOString(),
-    status: "matched",
-    hasMatch: true,
-  },
-  {
-    id: "1c103700-2f47-444a-93b4-4bb7233f6dd9",
-    name: "boAt Airdopes 141 ANC Wireless Earbuds (White)",
-    category: "Audio & Accessories",
-    type: "lost",
-    location: "Central Library Reading Room (2nd Floor)",
-    date: "Today, 11:30 AM",
-    createdAt: new Date().toISOString(),
-    status: "matched",
-    hasMatch: true,
-  },
-  {
-    id: "3ece4c3c-74f3-4f73-9cec-280f2ea82012",
-    name: "Casio fx-991CW ClassWiz Scientific Calculator",
-    category: "Study Material",
-    type: "found",
-    location: "Drafting Hall 102, Main Building",
-    date: "Today, 1:45 PM",
-    createdAt: new Date().toISOString(),
-    status: "matched",
-    hasMatch: true,
-  },
-  {
-    id: "7b891c23-4567-4890-a123-ef456789abcd",
-    name: "TI-84 Plus CE Graphing Calculator",
-    category: "Electronics",
-    type: "lost",
-    location: "Library 2nd Floor Reading Room",
-    date: "Yesterday",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    status: "recovered",
-    hasMatch: false,
-  },
-  {
-    id: "8c902d34-5678-4901-b234-fa567890bcde",
-    name: "Sony WH-1000XM4 Wireless Headphones",
-    category: "Audio & Accessories",
-    type: "lost",
-    location: "Auditorium Hall, Building B",
-    date: "3 days ago",
-    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    status: "searching",
-    hasMatch: false,
-  },
-];
-
 export default function MyReportsPage() {
-  const [reports, setReports] = useState<Report[]>(DEMO_CAMPUS_REPORTS);
+  const [reports, setReports] = useState<Report[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "lost" | "found" | "resolved">("all");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [thresholdHours, setThresholdHours] = useState<number>(72);
   const [selectedForEscalation, setSelectedForEscalation] = useState<Report | null>(null);
   const [isEscalating, setIsEscalating] = useState(false);
   const [escalateSuccessMsg, setEscalateSuccessMsg] = useState<string | null>(null);
   const [escalateErrorMsg, setEscalateErrorMsg] = useState<string | null>(null);
 
-  // Helper: prepend localStorage-cached submissions so newly added items appear immediately
-  const mergeLocalReports = (base: Report[]): Report[] => {
-    try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem("vit_user_reports") : null;
-      if (!raw) return base;
-      const local: any[] = JSON.parse(raw);
-      const baseIds = new Set(base.map((r) => r.id));
-      const localFormatted: Report[] = local
-        .filter((r) => !baseIds.has(r.id))
-        .map((r) => ({
-          id: r.id,
-          name: r.item_name || r.name || "Unnamed Item",
-          category: r.category || "Other",
-          type: (r.type === "found" ? "found" : "lost") as "lost" | "found",
-          location: r.location || "Campus",
-          date: r.dateTime ? new Date(r.dateTime).toLocaleDateString() : "Today",
-          createdAt: r.dateTime || new Date().toISOString(),
-          status: "searching" as const,
-          hasMatch: false,
-        }));
-      return [...localFormatted, ...base];
-    } catch (_) {
-      return base;
-    }
-  };
+  // Delete modal state
+  const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchMyReports = async () => {
     setIsLoading(true);
@@ -126,9 +62,7 @@ export default function MyReportsPage() {
           const meRes = await fetch("/api/auth/me");
           if (meRes.ok) {
             const meData = await meRes.json();
-            if (meData.session) {
-              session = meData.session;
-            }
+            if (meData.session) session = meData.session;
           }
         } catch (_) {}
       }
@@ -139,7 +73,7 @@ export default function MyReportsPage() {
         const escRes = await fetch("/api/escalations");
         if (escRes.ok) {
           const escData = await escRes.json();
-          if (escData.escalations && Array.isArray(escData.escalations)) {
+          if (Array.isArray(escData.escalations)) {
             escData.escalations.forEach((e: any) => {
               escalationsMap[e.report_id] = e;
             });
@@ -153,11 +87,11 @@ export default function MyReportsPage() {
       const queryParams = new URLSearchParams();
       if (session?.id) queryParams.set("reporterId", session.id);
       if (session?.email) queryParams.set("reporterEmail", session.email);
-      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
-      const res = await fetch(`/api/reports${queryString}`);
+      const res = await fetch(`/api/reports?${queryParams.toString()}`);
+
       if (res.ok) {
         const data = await res.json();
-        if (data.reports && Array.isArray(data.reports) && data.reports.length > 0) {
+        if (Array.isArray(data.reports)) {
           const live: Report[] = data.reports.map((r: any) => {
             const esc = escalationsMap[r.id];
             const displayStatus = esc ? "under_human_review" : (r.status as any);
@@ -167,26 +101,49 @@ export default function MyReportsPage() {
               category: r.category,
               type: r.type,
               location: r.location,
-              date: r.date_time ? new Date(r.date_time).toLocaleDateString() : "Today",
+              date: r.date_time ? new Date(r.date_time).toLocaleDateString() : "Recent",
               createdAt: r.created_at || r.date_time,
               status: displayStatus,
               hasMatch: r.status === "matched",
+              photoUrl: r.photo_url,
               escalation: esc ? { id: esc.id, status: esc.status, admin_notes: esc.admin_notes } : undefined,
             };
           });
 
-          // Merge localStorage cache so newly added reports appear without page refresh
-          let merged = mergeLocalReports(live);
-          setReports(merged);
+          // Merge cached submissions from localStorage if present
+          try {
+            const raw = typeof window !== "undefined" ? localStorage.getItem("vit_user_reports") : null;
+            if (raw) {
+              const local: any[] = JSON.parse(raw);
+              const liveIds = new Set(live.map((r) => r.id));
+              local.forEach((loc) => {
+                if (!liveIds.has(loc.id)) {
+                  live.unshift({
+                    id: loc.id,
+                    name: loc.item_name || loc.name || "Item",
+                    category: loc.category || "General",
+                    type: loc.type || "lost",
+                    location: loc.location || "Campus",
+                    date: "Today",
+                    createdAt: loc.dateTime || new Date().toISOString(),
+                    status: "searching",
+                    photoUrl: loc.photoUrl,
+                  });
+                }
+              });
+            }
+          } catch (_) {}
+
+          setReports(live);
         } else {
-          setReports(mergeLocalReports(DEMO_CAMPUS_REPORTS));
+          setReports([]);
         }
       } else {
-        setReports(mergeLocalReports(DEMO_CAMPUS_REPORTS));
+        setReports([]);
       }
     } catch (e) {
       console.warn("My reports fetch notice:", e);
-      setReports(mergeLocalReports(DEMO_CAMPUS_REPORTS));
+      setReports([]);
     } finally {
       setIsLoading(false);
     }
@@ -194,100 +151,132 @@ export default function MyReportsPage() {
 
   useEffect(() => {
     fetchMyReports();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("my_reports_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "reports" }, () => {
+        fetchMyReports();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const isEligibleForEscalation = (report: Report): boolean => {
     if (report.type !== "lost") return false;
     if (report.status !== "searching") return false;
-    if (report.hasMatch) return false;
     if (report.escalation) return false;
+    if (!report.createdAt) return false;
 
-    const createdTime = report.createdAt ? new Date(report.createdAt).getTime() : 0;
-    if (!createdTime) return false;
-
-    const ageHours = (Date.now() - createdTime) / (1000 * 60 * 60);
-    return ageHours >= thresholdHours;
+    const reportTime = new Date(report.createdAt).getTime();
+    const now = Date.now();
+    const elapsedHours = (now - reportTime) / (1000 * 60 * 60);
+    return elapsedHours >= thresholdHours;
   };
 
-  const handleConfirmEscalate = async () => {
+  // Edit eligibility: status must be searching and no escalation
+  const canEditReport = (report: Report) => {
+    return report.status === "searching" && !report.escalation;
+  };
+
+  // Delete eligibility: not recovered and status searching and no escalation
+  const canDeleteReport = (report: Report) => {
+    return report.status === "searching" && !report.escalation;
+  };
+
+  const handleEscalateSubmit = async () => {
     if (!selectedForEscalation) return;
     setIsEscalating(true);
+    setEscalateSuccessMsg(null);
     setEscalateErrorMsg(null);
 
     try {
+      const session = getStoredSession();
       const res = await fetch("/api/escalations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportId: selectedForEscalation.id }),
+        body: JSON.stringify({
+          reportId: selectedForEscalation.id,
+          requestedBy: session?.id,
+          requestedByEmail: session?.email,
+        }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        setEscalateErrorMsg(data.error || "Failed to escalate report");
-        return;
+      if (res.ok && data.success) {
+        setEscalateSuccessMsg("Report escalated to Security Desk review.");
+        setTimeout(() => {
+          setSelectedForEscalation(null);
+          setEscalateSuccessMsg(null);
+          fetchMyReports();
+        }, 1500);
+      } else {
+        setEscalateErrorMsg(data.error || "Failed to submit escalation.");
       }
-
-      setEscalateSuccessMsg("Report escalated to Campus Security Desk. A staff member is now reviewing your case.");
-      // Update local report status
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === selectedForEscalation.id
-            ? {
-                ...r,
-                status: "under_human_review",
-                escalation: { id: data.escalation.id, status: "pending" },
-              }
-            : r
-        )
-      );
-
-      // Close modal after brief pause
-      setTimeout(() => {
-        setSelectedForEscalation(null);
-        setEscalateSuccessMsg(null);
-      }, 2000);
     } catch (err: any) {
-      setEscalateErrorMsg(err.message || "Network error occurred");
+      setEscalateErrorMsg(err.message || "An unexpected error occurred.");
     } finally {
       setIsEscalating(false);
     }
   };
 
-  const lostCount = reports.filter((r) => r.type === "lost" && r.status !== "recovered").length;
-  const foundCount = reports.filter((r) => r.type === "found" && r.status !== "recovered").length;
-  const resolvedCount = reports.filter((r) => r.status === "recovered").length;
+  const handleDeleteConfirm = async () => {
+    if (!reportToDelete) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const session = getStoredSession();
+      const res = await fetch(`/api/reports/${reportToDelete.id}?userId=${session?.id || ""}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setReports((prev) => prev.filter((r) => r.id !== reportToDelete.id));
+        setReportToDelete(null);
+      } else {
+        setDeleteError(data.error || "Failed to delete report.");
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || "An error occurred during deletion.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const filteredReports = reports.filter((r) => {
-    if (activeTab === "all") return true;
+    if (activeTab === "lost") return r.type === "lost" && r.status !== "recovered";
+    if (activeTab === "found") return r.type === "found" && r.status !== "recovered";
     if (activeTab === "resolved") return r.status === "recovered";
-    return r.type === activeTab && r.status !== "recovered";
+    return true; // all
   });
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-            My Campus Reports
+            My Reports
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Track status, active matches, and security desk escalations for your submissions.
+            Track and manage your submitted campus lost and found reports.
           </p>
         </div>
-
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchMyReports} isLoading={isLoading}>
-            <RefreshCw className="w-3.5 h-3.5 mr-1" />
-            <span>Sync</span>
-          </Button>
           <Link href="/report/lost">
             <Button variant="primary" size="sm">
-              <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+              <PlusCircle className="w-4 h-4 mr-1.5" />
               <span>Report Lost</span>
             </Button>
           </Link>
           <Link href="/report/found">
             <Button variant="outline" size="sm">
+              <PlusCircle className="w-4 h-4 mr-1.5" />
               <span>Report Found</span>
             </Button>
           </Link>
@@ -295,174 +284,247 @@ export default function MyReportsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border overflow-x-auto">
-        {[
-          { key: "all", label: `All Reports (${reports.length})` },
-          { key: "lost", label: `My Lost Items (${lostCount})` },
-          { key: "found", label: `My Found Submissions (${foundCount})` },
-          { key: "resolved", label: `Resolved (${resolvedCount})` },
-        ].map((tab) => (
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-semibold">
+        {(["all", "lost", "found", "resolved"] as const).map((tab) => (
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 whitespace-nowrap transition-colors ${
-              activeTab === tab.key
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`pb-3 capitalize transition-colors relative ${
+              activeTab === tab
+                ? "text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400"
+                : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            {tab.label}
+            {tab === "resolved" ? "Resolved" : tab}
           </button>
         ))}
       </div>
 
-      {/* Report Cards */}
-      {filteredReports.length === 0 ? (
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20 text-slate-400">
+          <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+          <span className="text-sm">Loading your reports...</span>
+        </div>
+      ) : filteredReports.length === 0 ? (
         <EmptyState
-          title={`No ${activeTab} items`}
-          description="You do not have any active reports under this category."
+          title={`No ${activeTab === "all" ? "" : activeTab} reports found`}
+          description={
+            activeTab === "resolved"
+              ? "You do not have any recovered or resolved reports yet."
+              : "You haven't submitted any reports matching this filter."
+          }
+          action={
+            <Link href="/report/lost">
+              <Button variant="primary" size="sm">
+                File a Report
+              </Button>
+            </Link>
+          }
         />
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredReports.map((report) => {
-            const eligible = isEligibleForEscalation(report);
+            const canEdit = canEditReport(report);
+            const canDelete = canDeleteReport(report);
+            const canEscalate = isEligibleForEscalation(report);
 
             return (
-              <Card key={report.id} className="p-5 border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded uppercase ${
-                      report.type === "lost" 
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
-                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-                    }`}>
-                      {report.type === "lost" ? "Lost Item" : "Found Item"}
+              <Card key={report.id} className="flex flex-col justify-between hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        report.type === "lost"
+                          ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
+                          : "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300"
+                      }`}
+                    >
+                      {report.type}
                     </span>
                     <StatusBadge status={report.status} />
-                    <span className="text-xs text-muted-foreground">• {report.category}</span>
-                    {report.escalation && (
-                      <span className="text-[11px] font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
-                        Human Review: {report.escalation.status}
-                      </span>
-                    )}
                   </div>
-                  <h3 className="text-base font-bold text-foreground">{report.name}</h3>
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                  <CardTitle className="text-base font-bold mt-2 line-clamp-1">{report.name}</CardTitle>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{report.category}</p>
+                </CardHeader>
+
+                <CardContent className="space-y-4 pt-0">
+                  {/* Photo if available */}
+                  {report.photoUrl && (
+                    <div className="w-full h-36 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={report.photoUrl} alt={report.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
                     <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>{report.location}</span>
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+                      <span className="truncate">{report.location}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
+                      <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
                       <span>{report.date}</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  {eligible && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedForEscalation(report);
-                        setEscalateErrorMsg(null);
-                        setEscalateSuccessMsg(null);
-                      }}
-                      className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-950/50"
-                    >
-                      <ShieldAlert className="w-3.5 h-3.5 mr-1.5 text-purple-600 dark:text-purple-400" />
-                      <span>Escalate to Security</span>
-                    </Button>
-                  )}
+                  {/* Actions Bar */}
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      {canEdit ? (
+                        <Link href={`/report/edit/${report.id}`}>
+                          <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs">
+                            <Edit2 className="w-3.5 h-3.5 mr-1" />
+                            <span>Edit</span>
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          className="h-8 px-2.5 text-xs opacity-50 cursor-not-allowed"
+                          title={
+                            report.status === "recovered"
+                              ? "Item is resolved and archived"
+                              : "Editing locked: verification claim in progress"
+                          }
+                        >
+                          <Lock className="w-3 h-3 mr-1" />
+                          <span>Locked</span>
+                        </Button>
+                      )}
 
-                  {report.hasMatch && (
-                    <Link href="/matches">
-                      <Button variant="accent" size="sm">
-                        <span>View AI Matches</span>
-                        <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      {canDelete && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setReportToDelete(report)}
+                          className="h-8 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {report.hasMatch && (
+                      <Link href={`/matches`}>
+                        <Button variant="accent" size="sm" className="h-8 px-2.5 text-xs">
+                          <Sparkles className="w-3.5 h-3.5 mr-1" />
+                          <span>View Match</span>
+                        </Button>
+                      </Link>
+                    )}
+
+                    {canEscalate && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedForEscalation(report)}
+                        className="h-8 px-2.5 text-xs text-amber-600 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5 mr-1" />
+                        <span>Escalate</span>
                       </Button>
-                    </Link>
-                  )}
-
-                  {report.status === "recovered" && (
-                    <Link href={`/recovered/${report.id}`}>
-                      <Button variant="outline" size="sm">
-                        <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-                        <span>View Handover Pass</span>
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+                    )}
+                  </div>
+                </CardContent>
               </Card>
             );
           })}
         </div>
       )}
 
-      {/* Escalation Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
+      {reportToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <AlertCircle className="w-6 h-6 flex-shrink-0" />
+              <h3 className="text-lg font-bold">Delete Report</h3>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Are you sure you want to delete <strong>&ldquo;{reportToDelete.name}&rdquo;</strong>? This will permanently
+              remove your report, its uploaded photo, and any suggested matches.
+            </p>
+            {deleteError && (
+              <p className="text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 p-2 rounded">
+                {deleteError}
+              </p>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setReportToDelete(null);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+              >
+                <span>Cancel</span>
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                {isDeleting ? "Deleting..." : "Permanently Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Escalation Modal */}
       {selectedForEscalation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-card rounded-xl border border-border shadow-xl overflow-hidden">
-            <div className="p-5 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-600">
                 <ShieldAlert className="w-5 h-5" />
-                <h3 className="font-bold text-base text-foreground">Escalate Case to Campus Security Desk</h3>
+                <h3 className="text-base font-bold">Escalate to Campus Security</h3>
               </div>
               <button
                 onClick={() => setSelectedForEscalation(null)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+                className="text-slate-400 hover:text-slate-600"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-
-            <div className="p-6 space-y-4 text-sm">
-              <p className="text-muted-foreground">
-                No automatic AI match was detected for <strong className="text-foreground">{selectedForEscalation.name}</strong> after the standard search window.
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              This report has been active for more than {thresholdHours} hours without an automated AI match. Escalating
+              sends this case to Campus Security staff for manual custody register check.
+            </p>
+            {escalateErrorMsg && (
+              <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/50 p-2 rounded">
+                {escalateErrorMsg}
               </p>
-
-              <div className="p-4 rounded-lg bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 space-y-2 text-xs text-purple-900 dark:text-purple-200">
-                <p className="font-semibold text-sm">What happens upon escalation?</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>Your report details are forwarded immediately to the Lost & Found office / Campus Security Desk worklist.</li>
-                  <li>A security officer manually checks physical custody logs and inventory across campuses.</li>
-                  <li>Your report status updates to <strong>Under Human Review</strong>, and you will receive an in-app confirmation.</li>
-                </ul>
-              </div>
-
-              {escalateErrorMsg && (
-                <div className="p-3 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{escalateErrorMsg}</span>
-                </div>
-              )}
-
-              {escalateSuccessMsg && (
-                <div className="p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>{escalateSuccessMsg}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 bg-muted/30 border-t border-border flex items-center justify-end gap-3">
+            )}
+            {escalateSuccessMsg && (
+              <p className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 p-2 rounded">
+                {escalateSuccessMsg}
+              </p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedForEscalation(null)}
                 disabled={isEscalating}
               >
-                Cancel
+                <span>Cancel</span>
               </Button>
               <Button
                 variant="primary"
                 size="sm"
-                onClick={handleConfirmEscalate}
-                isLoading={isEscalating}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={handleEscalateSubmit}
+                disabled={isEscalating}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
               >
-                Confirm Escalation
+                {isEscalating ? "Submitting..." : "Confirm Escalation"}
               </Button>
             </div>
           </div>

@@ -82,7 +82,19 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ matches: result });
+    // Compute unread match count for notifications
+    let unreadCount = 0;
+    if (targetUserIds.length > 0) {
+      const { count } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .in("user_id", targetUserIds)
+        .eq("type", "match")
+        .eq("read", false);
+      unreadCount = count || 0;
+    }
+
+    return NextResponse.json({ matches: result, unreadCount });
   } catch (err: any) {
     console.error("GET /api/matches exception:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
