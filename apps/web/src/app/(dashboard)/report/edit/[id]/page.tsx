@@ -142,6 +142,7 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           reporterId: session?.id,
+          reporterEmail: session?.email,
           itemName: formData.itemName,
           category: formData.category,
           description: formData.description,

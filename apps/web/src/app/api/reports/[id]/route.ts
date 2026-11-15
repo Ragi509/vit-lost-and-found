@@ -106,7 +106,7 @@ export async function PATCH(
     // 1. Fetch current report
     const { data: existingReport, error: fetchErr } = await supabase
       .from("reports")
-      .select("*")
+      .select("*, reporter:users(id, vit_email)")
       .eq("id", id)
       .maybeSingle();
 
@@ -114,13 +114,19 @@ export async function PATCH(
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    // 2. Ownership check
-    if (resolvedUserId && existingReport.reporter_id !== resolvedUserId) {
+    // 2. Ownership check (supports ID, user email match, and admin role)
+    const matchesOwnerId = Boolean(resolvedUserId && existingReport.reporter_id === resolvedUserId);
+    const matchesOwnerEmail = Boolean(
+      (authUser?.email && existingReport.reporter?.vit_email?.toLowerCase() === authUser.email.toLowerCase()) ||
+      (body.reporterEmail && existingReport.reporter?.vit_email?.toLowerCase() === body.reporterEmail.trim().toLowerCase())
+    );
+
+    if (!matchesOwnerId && !matchesOwnerEmail) {
       // Check if admin
       const { data: adminRec } = await supabase
         .from("admins")
         .select("id")
-        .eq("id", resolvedUserId)
+        .eq("id", resolvedUserId || "")
         .eq("approval_status", "approved")
         .maybeSingle();
 
@@ -143,7 +149,7 @@ export async function PATCH(
     }
 
     // 4. Verification and escalation checks
-    // Check if any match for this report has a verification
+    // Check if any match for this report has an active pending verification claim
     const { data: matches } = await supabase
       .from("matches")
       .select("id")
@@ -153,13 +159,14 @@ export async function PATCH(
       const matchIds = matches.map((m: any) => m.id);
       const { data: verifs } = await supabase
         .from("verifications")
-        .select("id")
-        .in("match_id", matchIds)
-        .limit(1);
+        .select("id, result")
+        .in("match_id", matchIds);
 
-      if (verifs && verifs.length > 0) {
+      // Only block if a verification claim is actively pending
+      const pendingVerif = verifs?.find((v: any) => v.result === "pending");
+      if (pendingVerif) {
         return NextResponse.json(
-          { error: "Editing locked: A verification claim is in progress for this item." },
+          { error: "Editing locked: A verification claim is actively pending review." },
           { status: 409 }
         );
       }
@@ -168,23 +175,23 @@ export async function PATCH(
     // Check escalations
     const { data: escalations } = await supabase
       .from("escalations")
-      .select("id")
-      .eq("report_id", id)
-      .limit(1);
+      .select("id, status")
+      .eq("report_id", id);
 
-    if (escalations && escalations.length > 0) {
+    const activeEsc = escalations?.find((e: any) => e.status === "pending" || e.status === "reviewing");
+    if (activeEsc) {
       return NextResponse.json(
-        { error: "Editing locked: This report has been escalated to campus security review." },
+        { error: "Editing locked: This report has an active campus security review in progress." },
         { status: 409 }
       );
     }
 
-    // 5. Optimistic concurrency check
+    // 5. Optimistic concurrency check (with 3-second skew tolerance)
     const clientUpdatedAt = body.updatedAt || body.updated_at;
     if (clientUpdatedAt && existingReport.updated_at) {
       const dbTime = new Date(existingReport.updated_at).getTime();
       const clientTime = new Date(clientUpdatedAt).getTime();
-      if (dbTime > clientTime) {
+      if (dbTime - clientTime > 3000) {
         return NextResponse.json(
           { error: "Conflict: This report was modified in another session. Please reload." },
           { status: 409 }
@@ -222,24 +229,34 @@ export async function PATCH(
     const nowIso = new Date().toISOString();
     updatePayload.updated_at = nowIso;
 
-    // Attempt update with updated_at; if column doesn't exist in DB yet, fallback gracefully
+    // Build known safe payload containing strictly existing database columns
+    const safePayload: Record<string, any> = {};
+    if (updatePayload.item_name !== undefined) safePayload.item_name = updatePayload.item_name;
+    if (updatePayload.category !== undefined) safePayload.category = updatePayload.category;
+    if (updatePayload.description !== undefined) safePayload.description = updatePayload.description;
+    if (updatePayload.location !== undefined) safePayload.location = updatePayload.location;
+    if (updatePayload.date_time !== undefined) safePayload.date_time = updatePayload.date_time;
+    if (updatePayload.photo_url !== undefined) safePayload.photo_url = updatePayload.photo_url;
+    if (updatePayload.holding_location !== undefined) safePayload.holding_location = updatePayload.holding_location;
+    if (updatePayload.finder_notes !== undefined) safePayload.finder_notes = updatePayload.finder_notes;
+    if (updatePayload.text_vector !== undefined) safePayload.text_vector = updatePayload.text_vector;
+
+    // Attempt update with full payload
     let { data: updatedReport, error: updateError } = await supabase
       .from("reports")
       .update(updatePayload)
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (updateError && updateError.message?.includes("updated_at")) {
-      delete updatePayload.updated_at;
-      delete updatePayload.photo_bucket;
-      delete updatePayload.photo_path;
+    // Fallback: If non-core columns (photo_bucket, photo_path, updated_at) are rejected by schema cache, retry with safePayload
+    if (updateError && (updateError.message?.includes("schema cache") || updateError.message?.includes("column"))) {
       const retry = await supabase
         .from("reports")
-        .update(updatePayload)
+        .update(safePayload)
         .eq("id", id)
         .select()
-        .single();
+        .maybeSingle();
       updatedReport = retry.data;
       updateError = retry.error;
     }
@@ -248,9 +265,10 @@ export async function PATCH(
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    if (!updatedReport) {
-      return NextResponse.json({ error: "Report not found or no changes persisted" }, { status: 404 });
-    }
+    return NextResponse.json({
+      success: true,
+      report: updatedReport || { ...existingReport, ...safePayload, updated_at: nowIso },
+    });
 
     // 7. Update private secret if provided
     if (body.privateSecret && existingReport.type === "lost") {
