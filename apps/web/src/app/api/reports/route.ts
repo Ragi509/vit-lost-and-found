@@ -225,7 +225,12 @@ export async function POST(request: Request) {
     const textVector = await fetchEmbeddingVector(reportText);
 
     // 3. Insert report into public.reports
-    const reportId = crypto.randomUUID();
+    const clientReportId = body.id || body.reportId;
+    const reportId = clientReportId && isUuid.test(clientReportId) ? clientReportId : crypto.randomUUID();
+    const defaultBucket = type === "lost" ? "lost-item-photos" : "found-item-photos";
+    const resolvedBucket = body.photoBucket || body.photo_bucket || defaultBucket;
+    const resolvedPath = body.photoPath || body.photo_path || null;
+
     const reportInsertPayload: any = {
       id: reportId,
       reporter_id: validUserId,
@@ -234,6 +239,8 @@ export async function POST(request: Request) {
       category,
       description: description || itemName,
       photo_url: photoUrl || null,
+      photo_bucket: resolvedBucket,
+      photo_path: resolvedPath,
       location: location || "Campus Location",
       date_time: dateTime || new Date().toISOString(),
       status: "searching",
@@ -245,11 +252,24 @@ export async function POST(request: Request) {
       reportInsertPayload.text_vector = textVector;
     }
 
-    const { data: newReport, error: insertError } = await supabase
+    let { data: newReport, error: insertError } = await supabase
       .from("reports")
       .insert(reportInsertPayload)
       .select()
       .single();
+
+    // Fallback if photo_bucket / photo_path columns are not present in some schemas
+    if (insertError && (insertError.message?.includes("photo_bucket") || insertError.message?.includes("photo_path"))) {
+      delete reportInsertPayload.photo_bucket;
+      delete reportInsertPayload.photo_path;
+      const retry = await supabase
+        .from("reports")
+        .insert(reportInsertPayload)
+        .select()
+        .single();
+      newReport = retry.data;
+      insertError = retry.error;
+    }
 
     if (insertError) {
       console.error("Error inserting report:", insertError);

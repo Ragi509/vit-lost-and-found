@@ -104,12 +104,16 @@ export default function ReportFoundPage() {
       }
     }
 
+    let persistedReportId = reportId;
+
     // Call live /api/reports endpoint to persist to Supabase & run similarity scan
     try {
       const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: reportId,
+          reportId: reportId,
           reporterId: session?.id,
           reporterEmail: session?.email,
           type: "found",
@@ -127,6 +131,9 @@ export default function ReportFoundPage() {
       });
 
       const data = await res.json();
+      if (res.ok && data?.report?.id) {
+        persistedReportId = data.report.id;
+      }
 
       // Broadcast event via Supabase Realtime channel
       const supabase = createClient();
@@ -134,7 +141,7 @@ export default function ReportFoundPage() {
       await channel.send({
         type: "broadcast",
         event: "new_report",
-        payload: { reportId, type: "found", item: formData.itemName },
+        payload: { reportId: persistedReportId, type: "found", item: formData.itemName },
       });
       if (data.match) {
         await channel.send({
@@ -151,7 +158,7 @@ export default function ReportFoundPage() {
     try {
       const storedReports = JSON.parse(localStorage.getItem("vit_user_reports") || "[]");
       storedReports.unshift({
-        id: reportId,
+        id: persistedReportId,
         type: "found",
         item_name: formData.itemName,
         category: formData.category,
@@ -160,7 +167,7 @@ export default function ReportFoundPage() {
         dateTime: formData.dateTime || new Date().toISOString(),
         description: formData.description,
         photo_url: previewUrl,
-        status: "Holding at Desk",
+        status: "searching",
       });
       localStorage.setItem("vit_user_reports", JSON.stringify(storedReports));
     } catch (e) {

@@ -164,6 +164,27 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
         return;
       }
 
+      // Synchronize updated values into local storage cache
+      try {
+        const raw = localStorage.getItem("vit_user_reports");
+        if (raw) {
+          const list = JSON.parse(raw).map((item: any) => {
+            if (item.id === id) {
+              return {
+                ...item,
+                item_name: formData.itemName,
+                category: formData.category,
+                description: formData.description,
+                location: formData.location,
+                photo_url: finalPhotoUrl,
+              };
+            }
+            return item;
+          });
+          localStorage.setItem("vit_user_reports", JSON.stringify(list));
+        }
+      } catch (_) {}
+
       router.push("/my-reports");
     } catch (err: any) {
       setErrorMsg(err.message || "Network error while saving changes.");

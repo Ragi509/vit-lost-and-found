@@ -36,6 +36,7 @@ export default function StaffLoginPage() {
       }
 
       localStorage.setItem("vit_staff_session", JSON.stringify(data.session));
+      localStorage.setItem("vit_session", JSON.stringify(data.session));
       router.push("/admin/console");
     } catch (err: any) {
       setError(err.message || "Failed to authenticate staff session");

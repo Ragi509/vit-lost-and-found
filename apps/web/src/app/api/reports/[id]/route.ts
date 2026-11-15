@@ -4,6 +4,31 @@ import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
+async function fetchEmbeddingVector(text: string): Promise<number[] | null> {
+  const serviceUrl = process.env.EMBEDDING_SERVICE_URL;
+  const apiKey = process.env.EMBEDDING_SERVICE_API_KEY;
+  if (!serviceUrl) return null;
+
+  try {
+    const res = await fetch(`${serviceUrl}/embed/text`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiKey ? { "X-Embedding-Service-Key": apiKey } : {}),
+      },
+      body: JSON.stringify({ text }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.vector)) return data.vector;
+      if (Array.isArray(data.embedding)) return data.embedding;
+    }
+  } catch (e) {
+    console.warn("Embedding service lookup notice:", e);
+  }
+  return null;
+}
+
 // Helper to resolve the authenticated user ID from request headers/cookies/params
 async function resolveAuthUser(request: Request, supabase: any): Promise<{ id: string; email?: string } | null> {
   const cookieHeader = request.headers.get("cookie") || "";
@@ -182,6 +207,17 @@ export async function PATCH(
     if (body.photoBucket !== undefined) updatePayload.photo_bucket = body.photoBucket;
     if (body.photoPath !== undefined) updatePayload.photo_path = body.photoPath;
 
+    // Regenerate text embedding if item details changed
+    if (body.itemName !== undefined || body.category !== undefined || body.description !== undefined) {
+      const updatedName = body.itemName !== undefined ? body.itemName : existingReport.item_name;
+      const updatedDesc = body.description !== undefined ? body.description : existingReport.description;
+      const textToEmbed = `${updatedName}. ${updatedDesc || ""}`;
+      const newVector = await fetchEmbeddingVector(textToEmbed);
+      if (newVector) {
+        updatePayload.text_vector = newVector;
+      }
+    }
+
     // Set updated_at
     const nowIso = new Date().toISOString();
     updatePayload.updated_at = nowIso;
@@ -210,6 +246,10 @@ export async function PATCH(
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    if (!updatedReport) {
+      return NextResponse.json({ error: "Report not found or no changes persisted" }, { status: 404 });
     }
 
     // 7. Update private secret if provided
@@ -329,9 +369,11 @@ export async function DELETE(
 
     // 5. Cleanup storage photos
     try {
-      const bucket = existingReport.type === "lost" ? "lost-item-photos" : "found-item-photos";
-      const path = `${existingReport.reporter_id}/${id}/photo.jpg`;
-      await supabase.storage.from(bucket).remove([path]);
+      const bucket = existingReport.photo_bucket || (existingReport.type === "lost" ? "lost-item-photos" : "found-item-photos");
+      const pathsToRemove: string[] = [];
+      if (existingReport.photo_path) pathsToRemove.push(existingReport.photo_path);
+      pathsToRemove.push(`${existingReport.reporter_id}/${id}/photo.jpg`);
+      await supabase.storage.from(bucket).remove(pathsToRemove);
       // Also try legacy bucket
       await supabase.storage.from("item-photos").remove([`${id}/photo.jpg`]);
     } catch (stErr) {
@@ -347,14 +389,19 @@ export async function DELETE(
       .delete()
       .or(`lost_report_id.eq.${id},found_report_id.eq.${id}`);
 
-    // 8. Delete report row
-    const { error: deleteError } = await supabase
+    // 8. Delete report row and verify affected count
+    const { data: deletedRows, error: deleteError } = await supabase
       .from("reports")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .select();
 
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
+
+    if (!deletedRows || deletedRows.length === 0) {
+      return NextResponse.json({ error: "Failed to delete: Report not found or already removed." }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, deleted: id });

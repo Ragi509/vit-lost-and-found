@@ -11,23 +11,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const adminPasswordEnv = process.env.ADMIN_PASSWORD;
-
-    if (!adminPasswordEnv) {
-      return NextResponse.json(
-        { error: "Staff password authentication is not configured in server environment" },
-        { status: 500 }
-      );
-    }
-
-    // 1. Verify password matches configured server environment variable
-    if (password !== adminPasswordEnv) {
-      return NextResponse.json({ error: "Invalid staff credentials" }, { status: 401 });
-    }
-
-    // 2. Verify user exists in public.users and public.admins with approved status
     const supabase = createAdminClient();
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Verify user exists in public.users
     const { data: userRec } = await supabase
       .from("users")
       .select("id, full_name, role, id_number, vit_email")
@@ -38,17 +25,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Staff account not found" }, { status: 404 });
     }
 
+    // 2. Reject students attempting staff login with explicit informative error
+    if (userRec.role === "Student") {
+      return NextResponse.json(
+        { error: "Access denied: Student accounts must log in via the Student OTP portal." },
+        { status: 403 }
+      );
+    }
+
+    // 3. Verify user exists in public.admins and has approved status
     const { data: adminRec } = await supabase
       .from("admins")
       .select("id, department, staff_id, approval_status")
       .eq("id", userRec.id)
       .maybeSingle();
 
-    if (!adminRec || adminRec.approval_status !== "approved") {
+    if (!adminRec) {
       return NextResponse.json(
-        { error: "Access denied: Account is not an approved staff administrator" },
+        { error: "Access denied: Account is not enrolled in the campus staff administration registry." },
         { status: 403 }
       );
+    }
+
+    if (adminRec.approval_status === "pending") {
+      return NextResponse.json(
+        { error: "Access denied: Staff administrator application is pending approval by Campus Security." },
+        { status: 403 }
+      );
+    }
+
+    if (adminRec.approval_status !== "approved") {
+      return NextResponse.json(
+        { error: `Access denied: Staff account status is '${adminRec.approval_status}'. Access restricted.` },
+        { status: 403 }
+      );
+    }
+
+    // 4. Verify password against server environment configuration
+    const adminPasswordEnv = process.env.ADMIN_PASSWORD;
+
+    if (!adminPasswordEnv) {
+      return NextResponse.json(
+        { error: "Staff password authentication is not configured in server environment" },
+        { status: 500 }
+      );
+    }
+
+    if (password !== adminPasswordEnv) {
+      return NextResponse.json({ error: "Invalid staff credentials. Please check your password." }, { status: 401 });
     }
 
     const sessionObj = {
@@ -57,7 +81,7 @@ export async function POST(request: Request) {
       fullName: userRec.full_name,
       role: "Staff",
       staffId: adminRec.staff_id || userRec.id_number,
-      department: adminRec.department || "Campus Administration",
+      department: adminRec.department || "Campus Security & Facilities",
     };
 
     const response = NextResponse.json({
@@ -66,7 +90,15 @@ export async function POST(request: Request) {
       session: sessionObj,
     });
 
+    // Set staff session cookie
     response.cookies.set("vit_staff_session", JSON.stringify(sessionObj), {
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+      sameSite: "lax",
+    });
+
+    // Also set vit_session cookie so any generic auth gate detects staff role
+    response.cookies.set("vit_session", JSON.stringify(sessionObj), {
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
       sameSite: "lax",

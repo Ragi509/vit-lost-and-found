@@ -110,13 +110,22 @@ export default function MyReportsPage() {
             };
           });
 
-          // Merge cached submissions from localStorage if present
+          // Reconcile and clean up localStorage cache with live database records
           try {
             const raw = typeof window !== "undefined" ? localStorage.getItem("vit_user_reports") : null;
             if (raw) {
               const local: any[] = JSON.parse(raw);
               const liveIds = new Set(live.map((r) => r.id));
-              local.forEach((loc) => {
+              // Only keep local cache items that match live reports or are very recent (< 5 mins) pending sync
+              const fiveMinsAgo = Date.now() - 5 * 60 * 1000;
+              const validLocal = local.filter((loc) => {
+                if (liveIds.has(loc.id)) return true;
+                const locTime = loc.dateTime ? new Date(loc.dateTime).getTime() : 0;
+                return locTime > fiveMinsAgo;
+              });
+              localStorage.setItem("vit_user_reports", JSON.stringify(validLocal));
+
+              validLocal.forEach((loc) => {
                 if (!liveIds.has(loc.id)) {
                   live.unshift({
                     id: loc.id,
@@ -236,6 +245,15 @@ export default function MyReportsPage() {
 
       const data = await res.json();
       if (res.ok) {
+        // Immediately purge deleted item from local storage cache
+        try {
+          const raw = localStorage.getItem("vit_user_reports");
+          if (raw) {
+            const list = JSON.parse(raw).filter((x: any) => x.id !== reportToDelete.id);
+            localStorage.setItem("vit_user_reports", JSON.stringify(list));
+          }
+        } catch (_) {}
+
         setReports((prev) => prev.filter((r) => r.id !== reportToDelete.id));
         setReportToDelete(null);
       } else {
