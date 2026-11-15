@@ -186,14 +186,16 @@ export default function MyReportsPage() {
     return elapsedHours >= thresholdHours;
   };
 
-  // Edit eligibility: status must be searching and no escalation
+  // Edit eligibility: active report (searching, matched, active) and no escalation/recovered
   const canEditReport = (report: Report) => {
-    return report.status === "searching" && !report.escalation;
+    const s = (report.status || "").toLowerCase();
+    return s !== "recovered" && s !== "under_human_review" && !report.escalation;
   };
 
-  // Delete eligibility: not recovered and status searching and no escalation
+  // Delete eligibility: not recovered and no active escalation
   const canDeleteReport = (report: Report) => {
-    return report.status === "searching" && !report.escalation;
+    const s = (report.status || "").toLowerCase();
+    return s !== "recovered" && s !== "under_human_review" && !report.escalation;
   };
 
   const handleEscalateSubmit = async () => {
@@ -413,16 +415,17 @@ export default function MyReportsPage() {
                         </Button>
                       )}
 
-                      {canDelete && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setReportToDelete(report)}
-                          className="h-8 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setReportToDelete(report)}
+                        disabled={!canDelete}
+                        className={`h-8 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 ${!canDelete ? "opacity-50 cursor-not-allowed" : ""}`}
+                        title={!canDelete ? "Cannot delete resolved or escalated item" : "Delete report"}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        <span>Delete</span>
+                      </Button>
                     </div>
 
                     {report.hasMatch && (

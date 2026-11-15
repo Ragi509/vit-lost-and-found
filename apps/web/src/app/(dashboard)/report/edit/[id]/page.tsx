@@ -76,8 +76,8 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
           return;
         }
 
-        // Check if report is editable (status searching only)
-        if (r.status !== "searching") {
+        // Check if report is editable (searching or matched before verification/recovery)
+        if (r.status === "recovered" || r.status === "under_human_review") {
           setErrorMsg(`Editing is locked because this report is in '${r.status}' state.`);
           setIsLoading(false);
           return;

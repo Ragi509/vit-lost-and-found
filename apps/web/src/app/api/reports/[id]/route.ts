@@ -132,11 +132,11 @@ export async function PATCH(
       }
     }
 
-    // 3. Status guard: only allowed while status = 'searching'
-    if (existingReport.status !== "searching") {
+    // 3. Status guard: only allowed while status is 'searching' or 'matched' (before verification/recovery)
+    if (existingReport.status !== "searching" && existingReport.status !== "matched") {
       return NextResponse.json(
         {
-          error: `Editing locked: This report is currently '${existingReport.status}'. Editing is only permitted while status is 'searching'.`,
+          error: `Editing locked: This report is currently '${existingReport.status}'. Editing is only permitted before claim verification or recovery.`,
         },
         { status: 409 }
       );
