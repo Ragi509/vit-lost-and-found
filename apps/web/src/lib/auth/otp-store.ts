@@ -11,7 +11,14 @@ const otpMemoryCache = new Map<string, StoredOtp>();
 
 export async function generateAndSendOtp(
   email: string
-): Promise<{ success: boolean; error?: string; messageId?: string; deliveredTo?: string; sandboxRelayed?: boolean }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  messageId?: string;
+  deliveredTo?: string;
+  sandboxRelayed?: boolean;
+  sandboxBlocked?: boolean;
+}> {
   const cleanEmail = email.trim().toLowerCase();
   const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -95,65 +102,13 @@ export async function generateAndSendOtp(
 
     const data = await res.json();
     if (!res.ok) {
-      // Check if Resend free-tier sandbox restriction to registered account email
       if (res.status === 403 && data.message?.includes("You can only send testing emails to your own email address")) {
-        const match = data.message.match(/\(([^)]+)\)/);
-        const registeredEmail = match ? match[1] : "raginikengale@gmail.com";
-        console.log(`Resend sandbox: delivering OTP for ${cleanEmail} to registered inbox ${registeredEmail}`);
-
-        const fallbackRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "VIT Lost & Found <onboarding@resend.dev>",
-            to: [registeredEmail],
-            subject: `[VIT Portal] Verification Code for ${cleanEmail}: ${code}`,
-            html: `
-              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 28px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
-                <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                  <div style="background: #0d9488; color: #ffffff; width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; margin-right: 12px; text-align: center; line-height: 34px;">
-                    VIT
-                  </div>
-                  <div>
-                    <h2 style="margin: 0; font-size: 17px; color: #0f172a; font-weight: 700;">Lost &amp; Found Portal</h2>
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">Vishwakarma Institute of Technology, Pune</p>
-                  </div>
-                </div>
-
-                <div style="padding: 10px 14px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px; margin-bottom: 18px; font-size: 12px; color: #1e40af;">
-                  <strong>Resend Sandbox Delivery:</strong> Delivered to your verified Resend account (<code>${registeredEmail}</code>) for requested student address <code>${cleanEmail}</code>.
-                </div>
-
-                <p style="font-size: 14px; color: #334155; line-height: 1.5; margin-bottom: 20px;">
-                  Your single-use login verification code is:
-                </p>
-
-                <div style="background: #f8fafc; border: 2px dashed #0d9488; border-radius: 10px; padding: 18px; text-align: center; margin-bottom: 20px;">
-                  <span style="font-family: monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">
-                    ${code}
-                  </span>
-                </div>
-
-                <p style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 0;">
-                  ⏰ Valid for <strong>10 minutes</strong>. Single-use only.
-                </p>
-              </div>
-            `,
-          }),
-        });
-
-        const fallbackData = await fallbackRes.json();
-        if (fallbackRes.ok) {
-          return {
-            success: true,
-            messageId: fallbackData.id,
-            deliveredTo: registeredEmail,
-            sandboxRelayed: true,
-          };
-        }
+        console.warn(`[OTP] Resend free-tier sandbox block: direct delivery to ${cleanEmail} restricted.`);
+        return {
+          success: false,
+          sandboxBlocked: true,
+          error: "Resend Sandbox Restriction: Free-tier accounts can only dispatch emails to the verified account owner. Direct delivery to student inboxes (@vit.edu) requires verifying an institutional domain (e.g. mail.vit.edu) in Resend DNS settings.",
+        };
       }
 
       console.error("Resend API error:", data);

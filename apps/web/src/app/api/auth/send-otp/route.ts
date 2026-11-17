@@ -23,8 +23,11 @@ export async function POST(request: Request) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error || "Failed to dispatch verification code" },
-        { status: 500 }
+        {
+          error: result.error || "Failed to dispatch verification code",
+          sandboxBlocked: result.sandboxBlocked || false,
+        },
+        { status: result.sandboxBlocked ? 403 : 500 }
       );
     }
 
@@ -32,10 +35,7 @@ export async function POST(request: Request) {
       success: true,
       messageId: result.messageId,
       deliveredTo: result.deliveredTo,
-      sandboxRelayed: result.sandboxRelayed,
-      message: result.sandboxRelayed
-        ? `In sandbox mode, verification code was dispatched to ${result.deliveredTo}`
-        : `Verification code successfully sent to ${cleanEmail}`,
+      message: `Verification code successfully sent to ${cleanEmail}`,
     });
   } catch (err: any) {
     console.error("POST /api/auth/send-otp error:", err);
