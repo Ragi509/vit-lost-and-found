@@ -283,14 +283,14 @@ export default function MyReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#202B3C] dark:text-slate-100">
             My Reports
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Track and manage your submitted campus lost and found reports.
+            Track, update, or remove your submitted campus lost and found reports.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <Link href="/report/lost">
             <Button variant="primary" size="sm">
               <PlusCircle className="w-4 h-4 mr-1.5" />
@@ -299,35 +299,35 @@ export default function MyReportsPage() {
           </Link>
           <Link href="/report/found">
             <Button variant="outline" size="sm">
-              <PlusCircle className="w-4 h-4 mr-1.5" />
+              <PlusCircle className="w-4 h-4 mr-1.5 text-[#3A7D80]" />
               <span>Report Found</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-semibold">
+      {/* Modern Pill Tabs */}
+      <div className="inline-flex rounded-xl border border-slate-200/80 dark:border-slate-800 p-1 bg-slate-100/70 dark:bg-slate-900 shadow-2xs">
         {(["all", "lost", "found", "resolved"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`pb-3 capitalize transition-colors relative ${
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
               activeTab === tab
-                ? "text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400"
+                ? "bg-white dark:bg-slate-800 text-[#202B3C] dark:text-slate-100 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            {tab === "resolved" ? "Resolved" : tab}
+            {tab === "resolved" ? "Recovered & Resolved" : `${tab} Items`}
           </button>
         ))}
       </div>
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex justify-center items-center py-20 text-slate-400">
-          <RefreshCw className="w-6 h-6 animate-spin mr-2" />
-          <span className="text-sm">Loading your reports...</span>
+        <div className="flex flex-col justify-center items-center py-24 text-slate-400 gap-3">
+          <RefreshCw className="w-7 h-7 animate-spin text-[#3A7D80]" />
+          <span className="text-sm font-medium">Loading your reports...</span>
         </div>
       ) : filteredReports.length === 0 ? (
         <EmptyState
@@ -346,58 +346,92 @@ export default function MyReportsPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredReports.map((report) => {
             const canEdit = canEditReport(report);
             const canDelete = canDeleteReport(report);
             const canEscalate = isEligibleForEscalation(report);
 
             return (
-              <Card key={report.id} className="flex flex-col justify-between hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                        report.type === "lost"
-                          ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300"
-                      }`}
-                    >
-                      {report.type}
-                    </span>
-                    <StatusBadge status={report.status} />
-                  </div>
-                  <CardTitle className="text-base font-bold mt-2 line-clamp-1">{report.name}</CardTitle>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{report.category}</p>
-                </CardHeader>
-
-                <CardContent className="space-y-4 pt-0">
-                  {/* Photo if available */}
-                  {report.photoUrl && (
-                    <div className="w-full h-36 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
+              <Card key={report.id} className="flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-200 group overflow-hidden border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/85">
+                <div>
+                  {report.photoUrl ? (
+                    <div className="w-full h-44 overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={report.photoUrl} alt={report.name} className="w-full h-full object-cover" />
+                      <img
+                        src={report.photoUrl}
+                        alt={report.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <span
+                          className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs ${
+                            report.type === "lost"
+                              ? "bg-[#D95D5D] text-white"
+                              : "bg-[#3A7D80] text-white"
+                          }`}
+                        >
+                          {report.type}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-5 pb-0 flex items-center justify-between">
+                      <span
+                        className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                          report.type === "lost"
+                            ? "bg-rose-50 text-[#D95D5D] border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300"
+                            : "bg-teal-50 text-[#3A7D80] border border-teal-200/60 dark:bg-teal-950/40 dark:text-teal-300"
+                        }`}
+                      >
+                        {report.type}
+                      </span>
+                      <StatusBadge status={report.status} />
                     </div>
                   )}
 
-                  <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-                      <span className="truncate">{report.location}</span>
+                  <div className="p-5 space-y-3">
+                    {report.photoUrl && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-[#3A7D80] dark:text-sky-300 font-bold uppercase tracking-wider">
+                          {report.category}
+                        </span>
+                        <StatusBadge status={report.status} />
+                      </div>
+                    )}
+
+                    <div>
+                      {!report.photoUrl && (
+                        <p className="text-xs text-[#3A7D80] dark:text-sky-300 font-bold uppercase tracking-wider mb-1">
+                          {report.category}
+                        </p>
+                      )}
+                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-[#23395B] dark:group-hover:text-sky-300 transition-colors">
+                        {report.name}
+                      </h3>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-                      <span>{report.date}</span>
+
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 shrink-0 text-[#3A7D80] dark:text-sky-400" />
+                        <span className="truncate">{report.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                        <span>{report.date}</span>
+                      </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Actions Bar */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                {/* Actions Bar */}
+                <div className="p-5 pt-0">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
                       {canEdit ? (
                         <Link href={`/report/edit/${report.id}`}>
-                          <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs">
-                            <Edit2 className="w-3.5 h-3.5 mr-1" />
+                          <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
+                            <Edit2 className="w-3.5 h-3.5 mr-1 text-[#3A7D80]" />
                             <span>Edit</span>
                           </Button>
                         </Link>
@@ -423,7 +457,7 @@ export default function MyReportsPage() {
                         size="sm"
                         onClick={() => setReportToDelete(report)}
                         disabled={!canDelete}
-                        className={`h-8 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 ${!canDelete ? "opacity-50 cursor-not-allowed" : ""}`}
+                        className={`h-8 px-3 text-xs text-[#D95D5D] hover:bg-rose-50 dark:hover:bg-rose-950/40 border-slate-200 dark:border-slate-700 ${!canDelete ? "opacity-50 cursor-not-allowed" : ""}`}
                         title={!canDelete ? "Cannot delete resolved or escalated item" : "Delete report"}
                       >
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
@@ -431,28 +465,30 @@ export default function MyReportsPage() {
                       </Button>
                     </div>
 
-                    {report.hasMatch && (
-                      <Link href={`/matches`}>
-                        <Button variant="accent" size="sm" className="h-8 px-2.5 text-xs">
-                          <Sparkles className="w-3.5 h-3.5 mr-1" />
-                          <span>View Match</span>
-                        </Button>
-                      </Link>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {report.hasMatch && (
+                        <Link href={`/matches`}>
+                          <Button variant="accent" size="sm" className="h-8 px-2.5 text-xs">
+                            <Sparkles className="w-3.5 h-3.5 mr-1 text-sky-200" />
+                            <span>Match</span>
+                          </Button>
+                        </Link>
+                      )}
 
-                    {canEscalate && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedForEscalation(report)}
-                        className="h-8 px-2.5 text-xs text-amber-600 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                      >
-                        <ShieldAlert className="w-3.5 h-3.5 mr-1" />
-                        <span>Escalate</span>
-                      </Button>
-                    )}
+                      {canEscalate && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedForEscalation(report)}
+                          className="h-8 px-2.5 text-xs text-amber-600 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5 mr-1" />
+                          <span>Escalate</span>
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </CardContent>
+                </div>
               </Card>
             );
           })}

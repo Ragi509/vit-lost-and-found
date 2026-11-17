@@ -463,19 +463,19 @@ export default function AdminConsolePage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
       {/* Restrained Operational Header */}
-      <header className="border-b border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
+      <header className="border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-6 py-3.5 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 flex items-center justify-center font-bold text-xs tracking-wider">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#23395B] to-[#3A7D80] text-white flex items-center justify-center font-extrabold text-xs tracking-wider shadow-sm">
             VIT
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm leading-none">Staff Security & Analytics Console</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 font-semibold border border-teal-300 dark:border-teal-800">
+              <span className="font-extrabold text-sm leading-none text-[#202B3C] dark:text-slate-100">Staff Security & Analytics Console</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-teal-50 dark:bg-teal-950/80 text-[#3A7D80] dark:text-teal-300 font-bold border border-teal-200/80 dark:border-teal-800">
                 PROD-SEC-2.0
               </span>
             </div>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-[#718096] dark:text-slate-400 font-medium">
               Campus Adjudication & Oversight Workstation • Bibwewadi & Kondhwa
             </span>
           </div>
@@ -487,14 +487,14 @@ export default function AdminConsolePage() {
               setActiveTab("invites");
               generateInviteCode();
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[#202B3C] dark:text-slate-200 font-semibold shadow-xs transition-colors"
           >
             <KeyRound className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             <span>Generate Staff Invite</span>
           </button>
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 ml-2 transition-colors"
+            className="inline-flex items-center gap-1 text-[#718096] hover:text-[#202B3C] dark:hover:text-slate-200 font-semibold ml-2 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
@@ -511,22 +511,22 @@ export default function AdminConsolePage() {
               Management Modules
             </div>
 
-            <nav className="space-y-1">
+            <nav className="space-y-1.5">
               <button
                 onClick={() => setActiveTab("claims")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "claims"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
+                    ? "bg-[#23395B] text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Inbox className="w-4 h-4" />
-                  <span>Claims queue</span>
+                  <span>Claims Queue</span>
                 </div>
                 {pendingCount > 0 && (
                   <span
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
                       activeTab === "claims"
                         ? "bg-amber-400 text-slate-950"
                         : "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300"
@@ -539,9 +539,9 @@ export default function AdminConsolePage() {
 
               <button
                 onClick={() => setActiveTab("escalations")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "escalations"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
+                    ? "bg-[#23395B] text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
@@ -551,7 +551,7 @@ export default function AdminConsolePage() {
                 </div>
                 {escalations.filter((e) => e.status !== "resolved").length > 0 && (
                   <span
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
                       activeTab === "escalations"
                         ? "bg-purple-400 text-slate-950"
                         : "bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300"
@@ -564,9 +564,9 @@ export default function AdminConsolePage() {
 
               <button
                 onClick={() => setActiveTab("analytics")}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "analytics"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
+                    ? "bg-[#23395B] text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
@@ -576,9 +576,9 @@ export default function AdminConsolePage() {
 
               <button
                 onClick={() => setActiveTab("reports")}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "reports"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
+                    ? "bg-[#23395B] text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
@@ -588,9 +588,9 @@ export default function AdminConsolePage() {
 
               <button
                 onClick={() => setActiveTab("invites")}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "invites"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
+                    ? "bg-[#23395B] text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
@@ -601,9 +601,9 @@ export default function AdminConsolePage() {
           </div>
 
           {/* Quick System Badge */}
-          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-[11px] space-y-1">
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-[11px] space-y-1">
             <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>pgvector Daemon Live</span>
             </div>
             <p className="text-slate-500">
@@ -617,50 +617,56 @@ export default function AdminConsolePage() {
           {/* Top Operational Stat Cards (Required by Scope Specification) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Card 1: Pending Review */}
-            <div className="p-4 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/20">
+            <div className="p-5 rounded-2xl border border-amber-300 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/60 to-white dark:from-amber-950/20 dark:to-slate-900 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
                   Pending Review
                 </span>
-                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+                  <Clock className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#202B3C] dark:text-slate-100 mt-2">
                 {pendingCount}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-[11px] text-[#718096] dark:text-slate-400 mt-1 font-medium">
                 Claims awaiting staff manual adjudication
               </p>
             </div>
 
             {/* Card 2: Active Reports */}
-            <div className="p-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <div className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Active Reports
                 </span>
-                <FileText className="w-4 h-4 text-slate-500" />
+                <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  <FileText className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#202B3C] dark:text-slate-100 mt-2">
                 {activeReportsCount}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {lostReportsCount} Lost &amp; {foundReportsCount} Found currently in campus registry
+              <p className="text-[11px] text-[#718096] dark:text-slate-400 mt-1 font-medium">
+                {lostReportsCount} Lost &amp; {foundReportsCount} Found in campus registry
               </p>
             </div>
 
             {/* Card 3: Recovered (Last 7 Days) */}
-            <div className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20">
+            <div className="p-5 rounded-2xl border border-emerald-300 dark:border-emerald-900/60 bg-gradient-to-br from-emerald-50/60 to-white dark:from-emerald-950/20 dark:to-slate-900 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
                   Recovered, Last 7 Days
                 </span>
-                <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#202B3C] dark:text-slate-100 mt-2">
                 {recoveredLast7DaysCount}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Verified handovers completed at security desks
+              <p className="text-[11px] text-[#718096] dark:text-slate-400 mt-1 font-medium">
+                Items safely handed back to verified students
               </p>
             </div>
           </div>

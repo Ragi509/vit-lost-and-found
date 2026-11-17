@@ -164,7 +164,7 @@ export default function NotificationsPage() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "match":
-        return <Sparkles className="w-4 h-4 text-teal-600" />;
+        return <Sparkles className="w-4 h-4 text-[#3A7D80]" />;
       case "verification":
         return <ShieldAlert className="w-4 h-4 text-amber-600" />;
       default:
@@ -174,36 +174,36 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              Notifications
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#202B3C] dark:text-slate-100">
+              Campus Notifications
             </h1>
             {unreadCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-600 text-white">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#3A7D80] text-white shadow-xs">
                 {unreadCount} unread
               </span>
             )}
             {isLiveConnected && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Live</span>
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Real-time alerts for AI matches, custody handovers, and ownership reviews.
+          <p className="text-sm text-[#718096] dark:text-slate-400">
+            Real-time alerts for AI similarity matches, custody intake, and ownership review status.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchLiveNotifications}>
+          <Button variant="outline" size="sm" onClick={fetchLiveNotifications} className="rounded-xl shadow-xs">
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             <span>Refresh</span>
           </Button>
           {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={markAllAsRead}>
+            <Button variant="outline" size="sm" onClick={markAllAsRead} className="rounded-xl shadow-xs">
               <Check className="w-3.5 h-3.5 mr-1.5" />
               <span>Mark all as read</span>
             </Button>
@@ -212,18 +212,18 @@ export default function NotificationsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border">
+      <div className="flex gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-fit">
         {(["all", "match", "verification", "system"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg capitalize transition-all ${
               activeTab === tab
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-white dark:bg-slate-900 text-[#202B3C] dark:text-slate-100 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
-            {tab}
+            {tab === "all" ? "All Alerts" : tab}
           </button>
         ))}
       </div>
@@ -233,43 +233,49 @@ export default function NotificationsPage() {
         {filtered.length === 0 ? (
           <EmptyState
             title="No Notifications"
-            description="You have no notifications in this category. Live match alerts will appear here in real time."
+            description="You have no notifications in this category. Live match alerts and claim updates will appear here in real time."
           />
         ) : (
           filtered.map((n) => (
             <div
               key={n.id}
               onClick={() => markAsRead(n.id)}
-              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                 n.read
-                  ? "border-border bg-card opacity-80"
-                  : "border-teal-300 dark:border-teal-800 bg-teal-50/30 dark:bg-teal-950/20 shadow-sm"
+                  ? "border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 opacity-80 hover:opacity-100"
+                  : "border-teal-200 dark:border-teal-900/60 bg-gradient-to-r from-teal-50/50 to-white dark:from-teal-950/20 dark:to-slate-900 shadow-xs hover:shadow-md"
               }`}
             >
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 mt-0.5">
+              <div className="flex items-start gap-3.5">
+                <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${
+                  n.read ? "bg-slate-100 dark:bg-slate-800" : "bg-teal-100 dark:bg-teal-900/60"
+                }`}>
                   {getTypeIcon(n.type)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-semibold text-foreground truncate">{n.title}</h4>
-                    <span className="text-[11px] text-muted-foreground shrink-0">{n.timestamp}</span>
+                    <h4 className={`text-sm font-bold truncate ${
+                      n.read ? "text-[#202B3C] dark:text-slate-200" : "text-[#23395B] dark:text-sky-300"
+                    }`}>
+                      {n.title}
+                    </h4>
+                    <span className="text-[11px] font-medium text-slate-500 shrink-0">{n.timestamp}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{n.body}</p>
+                  <p className="text-xs text-[#718096] dark:text-slate-400 mt-1 leading-relaxed">{n.body}</p>
 
                   {n.link && (
                     <div className="mt-3">
                       <Link
                         href={n.link}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#3A7D80] hover:text-[#23395B] dark:hover:text-sky-300 transition-colors"
                       >
-                        <span>View Details</span>
+                        <span>View Details & Evidence</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </div>
                   )}
                 </div>
-                {!n.read && <div className="w-2 h-2 rounded-full bg-teal-600 shrink-0 mt-2" />}
+                {!n.read && <div className="w-2.5 h-2.5 rounded-full bg-[#3A7D80] shrink-0 mt-2 shadow-xs" />}
               </div>
             </div>
           ))

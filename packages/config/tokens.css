@@ -4,83 +4,84 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Background & Surface: Off White #F7F9FC & Clean Crisp White */
+    --background: 216 33% 98%;
+    --foreground: 217 30% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 217 30% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 217 30% 18%;
 
-    /* Brand Deep Navy Blue */
-    --primary: 222 47% 14%;
+    /* Brand Primary: Deep Navy Blue #23395B */
+    --primary: 216 44% 25%;
     --primary-foreground: 210 40% 98%;
 
-    /* Secondary Cool Slate */
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11.2%;
+    /* Brand Secondary: Muted Teal #3A7D80 */
+    --secondary: 182 38% 37%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 216 20% 94%;
+    --muted-foreground: 215 14% 52%;
 
-    /* Brand Muted Teal Accent */
-    --accent: 174 85% 31%;
-    --accent-foreground: 210 40% 98%;
+    /* Brand Accent: Soft Sky Blue #8ECAE6 */
+    --accent: 198 66% 73%;
+    --accent-foreground: 217 30% 18%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Semantic Status */
+    --destructive: 0 60% 61%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222 47% 14%;
+    --border: 216 20% 90%;
+    --input: 216 20% 90%;
+    --ring: 216 44% 25%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
     /* Status Colors */
-    --status-searching: 217 91% 60%;
-    --status-matched: 174 85% 31%;
-    --status-verify: 38 92% 50%;
-    --status-recovered: 142 71% 45%;
+    --status-searching: 198 66% 50%;
+    --status-matched: 182 38% 37%;
+    --status-verify: 36 81% 57%;
+    --status-recovered: 142 48% 43%;
   }
 
   .dark {
-    /* Deep Charcoal Navy (Never pure black) */
-    --background: 222 47% 7%;
+    /* Deep Charcoal Navy Surface (Never pure black) */
+    --background: 222 47% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 10%;
+    --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 10%;
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    /* Lightened brand navy for dark mode AA contrast */
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 7%;
+    /* Elevated Sky Navy for dark mode high contrast */
+    --primary: 198 66% 65%;
+    --primary-foreground: 222 47% 8%;
 
-    --secondary: 217 33% 17%;
+    --secondary: 182 40% 30%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 33% 16%;
+    --muted-foreground: 215 20% 65%;
 
-    /* Brand Teal in Dark Mode */
-    --accent: 173 80% 40%;
-    --accent-foreground: 222 47% 7%;
+    --accent: 182 45% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 48%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
+    --ring: 198 66% 65%;
 
     /* Status Colors in Dark Mode */
-    --status-searching: 217 91% 65%;
-    --status-matched: 173 80% 45%;
-    --status-verify: 38 92% 55%;
-    --status-recovered: 142 71% 50%;
+    --status-searching: 198 66% 65%;
+    --status-matched: 182 50% 50%;
+    --status-verify: 36 85% 60%;
+    --status-recovered: 142 55% 55%;
   }
 }
 
@@ -92,4 +93,22 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
 }

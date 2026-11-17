@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, ShieldCheck, Moon, Sun, Bell, CheckCircle2, History, Building2, Edit3, Save, Check, LogOut } from "lucide-react";
+import { User, ShieldCheck, Moon, Sun, Bell, CheckCircle2, History, Building2, Edit3, Save, Check, LogOut, Sparkles } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input } from "@vit/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getStoredSession, setStoredSession, clearStoredSession, UserSession } from "@/lib/auth/session";
@@ -110,21 +110,22 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="max-w-3xl mx-auto py-12 text-center text-sm text-slate-500">
-        Loading profile credentials...
+      <div className="max-w-3xl mx-auto py-16 text-center text-[#718096]">
+        <div className="w-8 h-8 rounded-full border-2 border-[#23395B] border-t-transparent animate-spin mx-auto mb-3" />
+        <p className="text-sm font-medium">Loading profile credentials...</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#202B3C] dark:text-slate-100">
             Student Profile & Identity
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Verified institutional credentials and recovery preferences.
+          <p className="text-sm text-[#718096] dark:text-slate-400 mt-1">
+            Verified institutional credentials and campus recovery preferences.
           </p>
         </div>
 
@@ -135,65 +136,69 @@ export default function ProfilePage() {
             }
             setIsEditing(!isEditing);
           }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-[#202B3C] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-xs"
         >
-          <Edit3 className="w-3.5 h-3.5" />
+          <Edit3 className="w-3.5 h-3.5 text-[#3A7D80]" />
           <span>{isEditing ? "Cancel Editing" : "Edit Profile"}</span>
         </button>
       </div>
 
       {saveMessage && (
-        <div className="p-3.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2 shadow-xs">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{saveMessage}</span>
         </div>
       )}
 
       {/* Identity Card */}
-      <Card className="border-border">
-        <CardHeader className="flex flex-row items-center gap-4 pb-4">
-          <div className="w-16 h-16 rounded-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 flex items-center justify-center font-bold text-xl shadow-md">
+      <Card className="rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+        <CardHeader className="flex flex-row items-center gap-4 p-6 bg-gradient-to-r from-slate-50/70 to-white dark:from-slate-900/60 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#23395B] to-[#3A7D80] text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
             {getInitials(profile.fullName)}
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-xl">{profile.fullName}</CardTitle>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <CardTitle className="text-xl font-bold text-[#202B3C] dark:text-slate-100 truncate">
+                {profile.fullName}
+              </CardTitle>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-teal-100 text-[#3A7D80] dark:bg-teal-950 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800">
                 {profile.role}
               </span>
             </div>
-            <CardDescription className="text-xs mt-0.5">{profile.email}</CardDescription>
+            <CardDescription className="text-xs text-[#718096] dark:text-slate-400 mt-1 truncate">
+              {profile.email}
+            </CardDescription>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 pt-2 border-t border-border text-xs">
+        <CardContent className="p-6 space-y-4 text-xs">
           {!isEditing ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-border">
-                  <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-0.5">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+                  <span className="text-[#718096] block font-semibold uppercase text-[10px] tracking-wider mb-1">
                     Institutional ID / PRN
                   </span>
-                  <span className="text-foreground font-mono font-medium">{profile.prn}</span>
+                  <span className="text-[#202B3C] dark:text-slate-100 font-mono font-bold text-sm">{profile.prn}</span>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-border">
-                  <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-0.5">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+                  <span className="text-[#718096] block font-semibold uppercase text-[10px] tracking-wider mb-1">
                     Campus Location
                   </span>
-                  <span className="text-foreground font-medium">{profile.campus}</span>
+                  <span className="text-[#202B3C] dark:text-slate-100 font-semibold">{profile.campus}</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-border">
-                <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-0.5">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[#718096] block font-semibold uppercase text-[10px] tracking-wider mb-1">
                   Academic Department
                 </span>
-                <span className="text-foreground font-medium">{profile.department}</span>
+                <span className="text-[#202B3C] dark:text-slate-100 font-semibold">{profile.department}</span>
               </div>
             </>
           ) : (
-            <form onSubmit={handleSaveProfile} className="space-y-4 pt-2">
+            <form onSubmit={handleSaveProfile} className="space-y-4 pt-1">
               <Input
                 label="Full Name"
                 id="editFullName"
@@ -224,12 +229,12 @@ export default function ProfilePage() {
                 onChange={(e) => setEditForm({ ...(editForm || profile), department: e.target.value })}
                 required
               />
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+              <div className="flex justify-end gap-2.5 pt-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="rounded-xl">
                   <span>Cancel</span>
                 </Button>
-                <Button type="submit" variant="primary" size="sm">
-                  <Save className="w-3.5 h-3.5 mr-1" />
+                <Button type="submit" variant="primary" size="sm" className="rounded-xl shadow-xs">
+                  <Save className="w-3.5 h-3.5 mr-1.5" />
                   <span>Save Changes</span>
                 </Button>
               </div>
@@ -240,55 +245,55 @@ export default function ProfilePage() {
 
       {/* Recovery Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="p-4 border-border flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300">
-            <History className="w-5 h-5" />
+        <Card className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center gap-4 shadow-xs">
+          <div className="p-3.5 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-[#3A7D80] dark:text-teal-300">
+            <History className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs text-muted-foreground font-medium">Active Submissions</span>
-            <h4 className="text-xl font-bold text-foreground">{userReportCount} {userReportCount === 1 ? 'report' : 'reports'}</h4>
+            <span className="text-xs text-[#718096] font-semibold uppercase tracking-wider">Active Submissions</span>
+            <h4 className="text-2xl font-extrabold text-[#202B3C] dark:text-slate-100 mt-0.5">{userReportCount} {userReportCount === 1 ? 'report' : 'reports'}</h4>
           </div>
         </Card>
 
-        <Card className="p-4 border-border flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-            <CheckCircle2 className="w-5 h-5" />
+        <Card className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center gap-4 shadow-xs">
+          <div className="p-3.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs text-muted-foreground font-medium">Belongings Recovered</span>
-            <h4 className="text-xl font-bold text-foreground">{userRecoveredCount} {userRecoveredCount === 1 ? 'item returned' : 'items returned'}</h4>
+            <span className="text-xs text-[#718096] font-semibold uppercase tracking-wider">Belongings Recovered</span>
+            <h4 className="text-2xl font-extrabold text-[#202B3C] dark:text-slate-100 mt-0.5">{userRecoveredCount} {userRecoveredCount === 1 ? 'item returned' : 'items returned'}</h4>
           </div>
         </Card>
       </div>
 
       {/* System Preferences & Theme */}
-      <Card className="border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">System Preferences</CardTitle>
-          <CardDescription className="text-xs">Configure theme appearance and alert notifications.</CardDescription>
+      <Card className="rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 p-6">
+          <CardTitle className="text-base font-bold text-[#202B3C] dark:text-slate-100">System Preferences</CardTitle>
+          <CardDescription className="text-xs text-[#718096]">Configure theme appearance and alert notifications.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 text-xs">
-          <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+        <CardContent className="p-6 space-y-4 text-xs">
+          <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
             <div>
-              <span className="font-semibold text-foreground block">Appearance Mode</span>
-              <span className="text-muted-foreground text-[11px]">
+              <span className="font-bold text-[#202B3C] dark:text-slate-100 block">Appearance Mode</span>
+              <span className="text-[#718096] dark:text-slate-400 text-[11px]">
                 Toggle between light and dark charcoal themes (WCAG AA compliant).
               </span>
             </div>
             <ThemeToggle />
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+          <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
             <div>
-              <span className="font-semibold text-foreground block">Match Alerts & Push Notifications</span>
-              <span className="text-muted-foreground text-[11px]">
-                Receive instant browser push notifications when a candidate match is found.
+              <span className="font-bold text-[#202B3C] dark:text-slate-100 block">Match Alerts & Push Notifications</span>
+              <span className="text-[#718096] dark:text-slate-400 text-[11px]">
+                Receive instant browser notifications when a candidate match is found.
               </span>
             </div>
             <button
               onClick={() => setNotificationsEnabled(!notificationsEnabled)}
               className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                notificationsEnabled ? "bg-teal-600" : "bg-slate-300 dark:bg-slate-700"
+                notificationsEnabled ? "bg-[#3A7D80]" : "bg-slate-300 dark:bg-slate-700"
               }`}
             >
               <div
@@ -307,7 +312,7 @@ export default function ProfilePage() {
                 clearStoredSession();
                 window.location.href = "/login";
               }}
-              className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+              className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30 rounded-xl"
             >
               <LogOut className="w-4 h-4 mr-2" />
               <span>Sign Out of Campus Session</span>

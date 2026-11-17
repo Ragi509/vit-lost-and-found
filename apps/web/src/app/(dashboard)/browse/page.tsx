@@ -201,7 +201,7 @@ export default function BrowsePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#202B3C] dark:text-slate-100">
             Campus Catalog
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -211,29 +211,29 @@ export default function BrowsePage() {
 
         {/* View toggle & type buttons */}
         <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-slate-900">
+          <div className="inline-flex rounded-xl border border-slate-200/80 dark:border-slate-800 p-1 bg-slate-100/70 dark:bg-slate-900 shadow-2xs">
             {(["found", "lost", "all"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTypeFilter(t)}
-                className={`px-3 py-1 rounded-md text-xs font-semibold capitalize transition-colors ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
                   typeFilter === t
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
+                    ? "bg-white dark:bg-slate-800 text-[#202B3C] dark:text-slate-100 shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
-                {t === "found" ? "Found Items" : t === "lost" ? "Lost Items" : "All"}
+                {t === "found" ? "Found Items" : t === "lost" ? "Lost Items" : "All Items"}
               </button>
             ))}
           </div>
 
-          <div className="hidden sm:inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-slate-900">
+          <div className="hidden sm:inline-flex rounded-xl border border-slate-200/80 dark:border-slate-800 p-1 bg-slate-100/70 dark:bg-slate-900 shadow-2xs">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === "grid"
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
-                  : "text-slate-400"
+                  ? "bg-white dark:bg-slate-800 text-[#202B3C] dark:text-slate-100 shadow-xs"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               }`}
               title="Grid View"
             >
@@ -241,10 +241,10 @@ export default function BrowsePage() {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-md ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === "list"
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
-                  : "text-slate-400"
+                  ? "bg-white dark:bg-slate-800 text-[#202B3C] dark:text-slate-100 shadow-xs"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               }`}
               title="List View"
             >
@@ -257,17 +257,17 @@ export default function BrowsePage() {
       {/* Filters Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <Input
             placeholder="Search by keyword, brand, description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-10"
           />
         </div>
 
         <select
-          className="text-xs sm:text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-3.5 py-2 text-slate-900 dark:text-slate-100 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#23395B]/20 dark:focus:ring-sky-400/30 transition-all cursor-pointer"
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
@@ -280,7 +280,7 @@ export default function BrowsePage() {
         </select>
 
         <select
-          className="text-xs sm:text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-3.5 py-2 text-slate-900 dark:text-slate-100 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#23395B]/20 dark:focus:ring-sky-400/30 transition-all cursor-pointer"
           value={selectedLocation}
           onChange={(e) => setSelectedLocation(e.target.value)}
         >
@@ -295,9 +295,9 @@ export default function BrowsePage() {
 
       {/* Results */}
       {isLoading ? (
-        <div className="flex justify-center items-center py-20 text-slate-400">
-          <RefreshCw className="w-6 h-6 animate-spin mr-2" />
-          <span className="text-sm">Searching campus catalog...</span>
+        <div className="flex flex-col justify-center items-center py-24 text-slate-400 gap-3">
+          <RefreshCw className="w-7 h-7 animate-spin text-[#3A7D80]" />
+          <span className="text-sm font-medium">Scanning campus catalog...</span>
         </div>
       ) : items.length === 0 ? (
         <EmptyState
@@ -319,114 +319,154 @@ export default function BrowsePage() {
           }
         />
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((item) => {
             const photo = item.photoUrl || item.photo_url;
             const title = item.name || item.item_name || "Campus Item";
 
             return (
-              <Card key={item.id} className="flex flex-col justify-between hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                          item.type === "lost"
-                            ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                            : "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300"
-                        }`}
-                      >
-                        {item.type}
-                      </span>
-                      {item.is_own && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 flex items-center gap-1">
-                          <UserCheck className="w-3 h-3" />
-                          <span>Your report</span>
-                        </span>
-                      )}
-                    </div>
-                    <StatusBadge status={item.status} />
-                  </div>
-                  <CardTitle className="text-base font-bold mt-2 line-clamp-1">{title}</CardTitle>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{item.category}</p>
-                </CardHeader>
-
-                <CardContent className="space-y-3 pt-0">
-                  {photo && (
-                    <div className="w-full h-36 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
+              <Card key={item.id} className="flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-200 group overflow-hidden border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/85">
+                <div>
+                  {photo ? (
+                    <div className="w-full h-44 overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo} alt={title} className="w-full h-full object-cover" />
+                      <img
+                        src={photo}
+                        alt={title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                        <span
+                          className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs ${
+                            item.type === "lost"
+                              ? "bg-[#D95D5D] text-white"
+                              : "bg-[#3A7D80] text-white"
+                          }`}
+                        >
+                          {item.type}
+                        </span>
+                        {item.is_own && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/90 text-slate-800 dark:bg-slate-900/90 dark:text-slate-200 backdrop-blur-xs flex items-center gap-1 shadow-xs">
+                            <UserCheck className="w-3 h-3 text-[#3A7D80]" />
+                            <span>Your report</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-5 pb-0 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                            item.type === "lost"
+                              ? "bg-rose-50 text-[#D95D5D] border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300"
+                              : "bg-teal-50 text-[#3A7D80] border border-teal-200/60 dark:bg-teal-950/40 dark:text-teal-300"
+                          }`}
+                        >
+                          {item.type}
+                        </span>
+                        {item.is_own && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 flex items-center gap-1">
+                            <UserCheck className="w-3 h-3 text-[#3A7D80]" />
+                            <span>Your report</span>
+                          </span>
+                        )}
+                      </div>
+                      <StatusBadge status={item.status} />
                     </div>
                   )}
 
-                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{item.description}</p>
-
-                  <div className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-                      <span className="truncate">{item.location}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-                      <span>{item.date}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    {item.is_own ? (
-                      <Link href="/my-reports" className="w-full">
-                        <Button variant="outline" size="sm" className="w-full text-xs">
-                          <span>Manage in My Reports</span>
-                        </Button>
-                      </Link>
-                    ) : item.type === "found" ? (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleInitiateClaim(item)}
-                        className="w-full text-xs flex items-center justify-center gap-1.5"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>This looks like my item</span>
-                      </Button>
-                    ) : (
-                      <Link href={`/report/found?matchedWith=${item.id}`} className="w-full">
-                        <Button variant="outline" size="sm" className="w-full text-xs">
-                          <span>I found this item</span>
-                        </Button>
-                      </Link>
+                  <div className="p-5 space-y-3">
+                    {photo && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-[#3A7D80] dark:text-sky-300 font-bold uppercase tracking-wider">
+                          {item.category}
+                        </span>
+                        <StatusBadge status={item.status} />
+                      </div>
                     )}
+
+                    <div>
+                      {!photo && (
+                        <p className="text-xs text-[#3A7D80] dark:text-sky-300 font-bold uppercase tracking-wider mb-1">
+                          {item.category}
+                        </p>
+                      )}
+                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-[#23395B] dark:group-hover:text-sky-300 transition-colors">
+                        {title}
+                      </h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 shrink-0 text-[#3A7D80] dark:text-sky-400" />
+                        <span className="truncate">{item.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                        <span>{item.date}</span>
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
+                </div>
+
+                <div className="p-5 pt-0">
+                  {item.is_own ? (
+                    <Link href="/my-reports" className="w-full block">
+                      <Button variant="outline" size="sm" className="w-full text-xs">
+                        <span>Manage in My Reports</span>
+                      </Button>
+                    </Link>
+                  ) : item.type === "found" ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleInitiateClaim(item)}
+                      className="w-full text-xs flex items-center justify-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-sky-200" />
+                      <span>This looks like my item</span>
+                    </Button>
+                  ) : (
+                    <Link href={`/report/found?matchedWith=${item.id}`} className="w-full block">
+                      <Button variant="outline" size="sm" className="w-full text-xs">
+                        <span>I found this item</span>
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </Card>
             );
           })}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {items.map((item) => {
             const title = item.name || item.item_name || "Campus Item";
             return (
-              <Card key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+              <Card key={item.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition-all border-slate-200/80 dark:border-slate-800/80">
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                         item.type === "lost"
-                          ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300"
+                          ? "bg-rose-50 text-[#D95D5D] border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300"
+                          : "bg-teal-50 text-[#3A7D80] border border-teal-200/60 dark:bg-teal-950/40 dark:text-teal-300"
                       }`}
                     >
                       {item.type}
                     </span>
-                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100">{title}</span>
+                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">{title}</span>
                     <StatusBadge status={item.status} />
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                     {item.category} • {item.location} • {item.date}
                   </p>
                 </div>
-                <div>
+                <div className="shrink-0">
                   {!item.is_own && item.type === "found" && (
                     <Button
                       variant="primary"
@@ -446,33 +486,33 @@ export default function BrowsePage() {
 
       {/* Claim Selection Modal (when user has multiple active lost reports) */}
       {selectedFoundItem && userLostReports.length > 1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 Which of your lost items is this?
               </h3>
               <button
                 onClick={() => setSelectedFoundItem(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               You are claiming: <strong>{selectedFoundItem.name || selectedFoundItem.item_name}</strong> found at{" "}
               {selectedFoundItem.location}. Please select your corresponding lost report:
             </p>
 
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
               {userLostReports.map((r) => (
                 <label
                   key={r.id}
-                  className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                     selectedLostReportId === r.id
-                      ? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/30"
-                      : "border-slate-200 dark:border-slate-800"
+                      ? "border-[#3A7D80] bg-teal-50/50 dark:bg-teal-950/40 shadow-xs ring-2 ring-[#3A7D80]/20"
+                      : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850"
                   }`}
                 >
                   <input
@@ -481,11 +521,11 @@ export default function BrowsePage() {
                     value={r.id}
                     checked={selectedLostReportId === r.id}
                     onChange={() => setSelectedLostReportId(r.id)}
-                    className="mt-0.5 text-teal-600"
+                    className="mt-0.5 text-[#3A7D80] focus:ring-[#3A7D80]"
                   />
                   <div>
                     <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{r.item_name}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                       {r.category} • {r.location}
                     </p>
                   </div>

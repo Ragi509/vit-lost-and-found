@@ -149,26 +149,26 @@ export function PhotoUpload({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer select-none ${
+          className={`border-2 border-dashed rounded-2xl p-7 text-center transition-all cursor-pointer select-none ${
             isDragging
-              ? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/30 ring-2 ring-teal-500/20"
-              : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-900/30"
+              ? "border-[#3A7D80] bg-teal-50/60 dark:bg-teal-950/40 ring-4 ring-[#8ECAE6]/25"
+              : "border-slate-200 dark:border-slate-800 hover:border-[#3A7D80]/60 dark:hover:border-teal-500/60 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-900/80"
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-500 dark:text-slate-400">
+          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center mx-auto mb-2.5 text-[#3A7D80] dark:text-sky-300 shadow-xs">
             <Upload className="w-5 h-5" />
           </div>
-          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-            Click to browse or drag & drop photo here
+          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+            Click to upload or drag & drop photograph
           </p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
             {sublabel}
           </p>
         </div>
       ) : (
         /* Selected Photo Preview Card */
-        <div className="border border-slate-300 dark:border-slate-700 rounded-xl p-3 bg-white dark:bg-slate-900 flex items-center gap-4">
-          <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-800">
+        <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 bg-white dark:bg-slate-900/90 shadow-xs flex items-center gap-4">
+          <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200/80 dark:border-slate-800">
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -185,18 +185,18 @@ export function PhotoUpload({
 
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-              {value?.name || "Selected Photo"}
+              {value?.name || "Selected Photograph"}
             </p>
             {value && (
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {formatFileSize(value.size)} • {value.type.split("/")[1].toUpperCase()}
+                {formatFileSize(value.size)} • {value.type.split("/")[1]?.toUpperCase()}
               </p>
             )}
-            <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center gap-3 mt-2.5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline"
+                className="text-xs font-semibold text-[#3A7D80] dark:text-sky-400 hover:underline"
               >
                 Change Photo
               </button>
@@ -204,7 +204,7 @@ export function PhotoUpload({
               <button
                 type="button"
                 onClick={handleRemove}
-                className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-[#D95D5D] hover:underline flex items-center gap-1"
               >
                 <X className="w-3 h-3" />
                 <span>Remove</span>

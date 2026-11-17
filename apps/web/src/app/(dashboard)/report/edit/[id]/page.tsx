@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Lock, Save, AlertCircle } from "lucide-react";
+import { ArrowLeft, Lock, Save, AlertCircle, ShieldCheck } from "lucide-react";
 import { Button, Input, Textarea, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@vit/ui";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { getStoredSession } from "@/lib/auth/session";
@@ -195,8 +195,9 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto py-12 text-center text-slate-500">
-        <p className="text-sm">Loading report details...</p>
+      <div className="max-w-2xl mx-auto py-16 text-center text-[#718096]">
+        <div className="w-8 h-8 rounded-full border-2 border-[#23395B] border-t-transparent animate-spin mx-auto mb-3" />
+        <p className="text-sm font-medium">Loading report details...</p>
       </div>
     );
   }
@@ -204,22 +205,34 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/my-reports" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+        <Link
+          href="/my-reports"
+          className="p-2 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#202B3C] dark:text-slate-200" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Edit {reportType === "lost" ? "Lost" : "Found"} Item Report
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              reportType === "lost"
+                ? "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
+                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+            }`}>
+              {reportType === "lost" ? "Lost Item Report" : "Found Item Report"}
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#202B3C] dark:text-slate-100">
+            Edit Report
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-[#718096] dark:text-slate-400">
             Make updates to your submitted report while it is actively searching.
           </p>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-start gap-3 text-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 flex items-start gap-3 text-sm shadow-xs">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
           <div className="flex-1">
             <p className="font-semibold">Unable to edit</p>
             <p className="text-xs mt-0.5">{errorMsg}</p>
@@ -227,15 +240,15 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-bold">Report Details</CardTitle>
-          <CardDescription className="text-xs">
+      <Card className="rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
+          <CardTitle className="text-base font-bold text-[#202B3C] dark:text-slate-100">Report Details</CardTitle>
+          <CardDescription className="text-xs text-[#718096]">
             Changes to description or category will re-align AI matching scores.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Item Name *"
               placeholder="e.g. Dell Inspiron 15 3520 Laptop"
@@ -245,11 +258,11 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
             />
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                 Category *
               </label>
               <select
-                className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[#202B3C] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#23395B]/15 focus:border-[#23395B] shadow-xs transition-colors"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 required
@@ -272,11 +285,11 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
             />
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                 Location *
               </label>
               <select
-                className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[#202B3C] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#23395B]/15 focus:border-[#23395B] shadow-xs transition-colors"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 required
@@ -300,11 +313,11 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
             {reportType === "found" && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                     Current Holding Location
                   </label>
                   <select
-                    className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[#202B3C] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#23395B]/15 focus:border-[#23395B] shadow-xs transition-colors"
                     value={formData.holdingLocation}
                     onChange={(e) => setFormData({ ...formData, holdingLocation: e.target.value })}
                   >
@@ -329,12 +342,12 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
 
             {/* Lost Item Distinguishing Secret */}
             {reportType === "lost" && (
-              <div className="p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-2">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100 font-semibold text-xs">
-                  <Lock className="w-3.5 h-3.5 text-teal-600" />
+              <div className="p-4 rounded-xl border border-teal-200/80 dark:border-teal-900/60 bg-teal-50/40 dark:bg-teal-950/20 space-y-2">
+                <div className="flex items-center gap-2 text-teal-900 dark:text-teal-200 font-bold text-xs uppercase tracking-wider">
+                  <Lock className="w-3.5 h-3.5 text-[#3A7D80]" />
                   <span>Private Distinguishing Detail (Encrypted Secret)</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
                   Hidden for your protection. Leave blank to keep existing secret, or enter a new value to replace it.
                 </p>
                 <Input
@@ -355,13 +368,19 @@ export default function EditReportPage({ params }: { params: { id: string } }) {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex justify-end gap-3 pt-5 border-t border-slate-100 dark:border-slate-800">
               <Link href="/my-reports">
-                <Button variant="outline" size="sm" type="button">
+                <Button variant="outline" size="sm" type="button" className="rounded-xl">
                   Cancel
                 </Button>
               </Link>
-              <Button variant="primary" size="sm" type="submit" disabled={isSubmitting}>
+              <Button
+                variant="primary"
+                size="sm"
+                type="submit"
+                disabled={isSubmitting}
+                className="rounded-xl shadow-xs"
+              >
                 <Save className="w-4 h-4 mr-1.5" />
                 <span>{isSubmitting ? "Saving Changes..." : "Save Changes"}</span>
               </Button>

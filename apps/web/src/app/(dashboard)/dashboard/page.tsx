@@ -53,24 +53,34 @@ interface StatCardProps {
   label: string;
   value: number;
   icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
   href?: string;
+  trendText?: string;
 }
 
-function StatCard({ label, value, icon, href }: StatCardProps) {
+function StatCard({ label, value, icon, iconBg, iconColor, href, trendText }: StatCardProps) {
   const inner = (
-    <Card className="p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
-      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-        {icon}
+    <Card className="p-5 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/85">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+          {label}
+        </span>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-xs ${iconBg} ${iconColor}`}>
+          {icon}
+        </div>
       </div>
       <div>
-        <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-          {label}
-        </p>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-3xl font-extrabold tracking-tight text-[#202B3C] dark:text-slate-100">{value}</p>
+        {trendText && (
+          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+            <span>{trendText}</span>
+          </p>
+        )}
       </div>
     </Card>
   );
-  if (href) return <Link href={href}>{inner}</Link>;
+  if (href) return <Link href={href} className="block">{inner}</Link>;
   return inner;
 }
 
@@ -275,85 +285,101 @@ export default function UserDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Greeting */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              Welcome back, {userName}
-            </h1>
-            {isLiveConnected && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Live</span>
-              </span>
-            )}
+      {/* Greeting Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-gradient-to-br from-white via-slate-50/50 to-teal-50/30 dark:from-slate-900/90 dark:via-slate-900/60 dark:to-teal-950/20 p-6 sm:p-8 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#202B3C] dark:text-slate-100">
+                Welcome back, {userName}
+              </h1>
+              {isLiveConnected && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Realtime Live</span>
+                </span>
+              )}
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              {userRole} • {user?.department || "Vishwakarma Institute of Technology, Pune"}
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {userRole} • {user?.department || "Vishwakarma Institute of Technology"}
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <Link href="/report/lost">
-            <Button variant="primary" size="md">
-              <PlusCircle className="w-4 h-4 mr-2" />
-              <span>Report Lost Item</span>
-            </Button>
-          </Link>
-          <Link href="/report/found">
-            <Button variant="outline" size="md">
-              <span>Report Found Item</span>
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/report/lost">
+              <Button variant="primary" size="md">
+                <PlusCircle className="w-4 h-4 mr-1.5" />
+                <span>Report Lost Item</span>
+              </Button>
+            </Link>
+            <Link href="/report/found">
+              <Button variant="outline" size="md">
+                <PlusCircle className="w-4 h-4 mr-1.5 text-[#3A7D80]" />
+                <span>Report Found Item</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           label="Active Reports"
           value={activeCount}
           icon={<Search className="w-5 h-5" />}
+          iconBg="bg-sky-50 dark:bg-sky-950/50"
+          iconColor="text-sky-600 dark:text-sky-400"
+          href="/my-reports"
+          trendText="Ongoing campus tracking"
         />
         <StatCard
           label="AI Matches Pending"
           value={matchCount}
           icon={<Sparkles className="w-5 h-5" />}
+          iconBg="bg-teal-50 dark:bg-teal-950/50"
+          iconColor="text-[#3A7D80] dark:text-teal-300"
           href="/matches"
+          trendText="Ready for your verification"
         />
         <StatCard
-          label="Recovered"
+          label="Items Recovered"
           value={recoveredCount}
           icon={<CheckCircle2 className="w-5 h-5" />}
+          iconBg="bg-emerald-50 dark:bg-emerald-950/50"
+          iconColor="text-emerald-600 dark:text-emerald-400"
+          href="/my-reports"
+          trendText="Successfully closed"
         />
         <StatCard
-          label="Unread Alerts"
+          label="Security Alerts"
           value={unreadCount}
           icon={<Bell className="w-5 h-5" />}
+          iconBg="bg-amber-50 dark:bg-amber-950/50"
+          iconColor="text-amber-600 dark:text-amber-400"
           href="/notifications"
+          trendText="Notifications & status"
         />
       </div>
 
       {/* AI Match Alert Banner */}
       {matchAlert && matchAlert.confidence_score >= 0.4 && (
-        <div className="p-5 rounded-xl border border-teal-300 dark:border-teal-800 bg-gradient-to-r from-teal-50/80 to-blue-50/50 dark:from-teal-950/40 dark:to-blue-950/20 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-600 text-white">
+        <div className="p-6 rounded-2xl border border-[#3A7D80]/40 dark:border-teal-700/60 bg-gradient-to-r from-teal-50/90 via-sky-50/50 to-white dark:from-teal-950/50 dark:via-slate-900/80 dark:to-slate-900/50 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-[#3A7D80] text-white shadow-xs">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{matchAlert.approximate_label}</span>
               </span>
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Candidate for your lost {matchAlert.lost_item_name}
+                High-confidence match for your lost <strong className="text-slate-800 dark:text-slate-200">{matchAlert.lost_item_name}</strong>
               </span>
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
               Found: {matchAlert.found_item_name}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              Location: <strong>{matchAlert.found_location}</strong> • Current
-              custody: <strong>{matchAlert.holding_location}</strong>
+              Found at: <strong className="font-semibold">{matchAlert.found_location}</strong> • Current custody: <strong className="font-semibold text-[#3A7D80] dark:text-teal-300">{matchAlert.holding_location}</strong>
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -382,24 +408,24 @@ export default function UserDashboard() {
         </div>
 
         {activeReport ? (
-          <Card>
-            <CardHeader className="pb-3 border-b border-border">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <Card className="border-slate-200/80 dark:border-slate-800/80 shadow-sm overflow-hidden">
+            <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-900/40">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   {/* Report switcher when multiple active */}
                   {totalActive > 1 && (
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <button
                         onClick={() =>
                           setActiveReportIndex((i) => Math.max(0, i - 1))
                         }
                         disabled={activeReportIndex === 0}
-                        className="p-0.5 rounded disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs"
                         aria-label="Previous report"
                       >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
-                      <span className="text-xs text-muted-foreground font-medium">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-bold tracking-tight">
                         Report {activeReportIndex + 1} of {totalActive}
                       </span>
                       <button
@@ -409,15 +435,15 @@ export default function UserDashboard() {
                           )
                         }
                         disabled={activeReportIndex === totalActive - 1}
-                        className="p-0.5 rounded disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs"
                         aria-label="Next report"
                       >
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
-                  <CardTitle className="text-base">{activeReport.name}</CardTitle>
-                  <CardDescription className="text-xs mt-0.5">
+                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">{activeReport.name}</CardTitle>
+                  <CardDescription className="text-xs mt-0.5 font-medium text-slate-500 dark:text-slate-400">
                     Reported at {activeReport.location}
                   </CardDescription>
                 </div>
@@ -434,12 +460,14 @@ export default function UserDashboard() {
                     ? "match"
                     : "report"
                 }
-                className="max-w-xl mx-auto"
+                className="max-w-xl mx-auto py-2"
               />
-              <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-teal-600" />
-                  <span>
+                  <div className="w-5 h-5 rounded-md bg-teal-50 dark:bg-teal-950/60 flex items-center justify-center text-[#3A7D80] shrink-0">
+                    <Clock className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="font-medium">
                     {activeReport.isEscalated
                       ? "Campus security desk is manually reviewing physical logs"
                       : activeReport.status === "matched" ||

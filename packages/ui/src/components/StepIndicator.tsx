@@ -33,30 +33,30 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, class
                 <div
                   className={cn(
                     "absolute top-4 -left-1/2 w-full h-0.5 -z-0 transition-colors duration-300",
-                    isDone ? "bg-teal-600 dark:bg-teal-500" : "bg-slate-200 dark:bg-slate-700"
+                    isDone ? "bg-[#3A7D80] dark:bg-teal-400" : "bg-slate-200 dark:bg-slate-800"
                   )}
                   aria-hidden="true"
                 />
               )}
               <div
                 className={cn(
-                  "relative z-10 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300",
+                  "relative z-10 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300 shadow-xs",
                   isDone
-                    ? "bg-teal-600 border-teal-600 text-white dark:bg-teal-500 dark:border-teal-500"
+                    ? "bg-[#3A7D80] border-[#3A7D80] text-white dark:bg-teal-500 dark:border-teal-500"
                     : isCurrent
-                    ? "bg-slate-900 border-slate-900 text-white dark:bg-slate-100 dark:border-slate-100 dark:text-slate-900 shadow-md ring-4 ring-teal-500/20"
-                    : "bg-white border-slate-300 text-slate-400 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-500"
+                    ? "bg-[#23395B] border-[#23395B] text-white dark:bg-sky-400 dark:border-sky-400 dark:text-slate-950 shadow-md ring-4 ring-[#8ECAE6]/30 dark:ring-sky-400/20"
+                    : "bg-white border-slate-300 text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500"
                 )}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
               </div>
               <span
                 className={cn(
                   "mt-2 text-xs font-medium tracking-tight transition-colors",
                   isCurrent
-                    ? "text-slate-900 dark:text-slate-100 font-semibold"
+                    ? "text-[#23395B] dark:text-sky-300 font-bold"
                     : isDone
-                    ? "text-teal-700 dark:text-teal-400"
+                    ? "text-[#3A7D80] dark:text-teal-400 font-semibold"
                     : "text-slate-500 dark:text-slate-400"
                 )}
               >
