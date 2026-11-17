@@ -51,18 +51,43 @@ export async function POST(request: Request) {
       if (userRec?.id) {
         userId = userRec.id;
       } else {
-        const { data: newUser } = await supabase
-          .from("users")
-          .insert({
-            vit_email: cleanEmail,
-            full_name: parsed.fullName,
-            role: parsed.role,
-            id_number: parsed.prn,
-          })
-          .select("id")
-          .single();
-        if (newUser?.id) {
-          userId = newUser.id;
+        // First ensure user exists in auth.users to satisfy users_id_fkey
+        let authUserId = null;
+        try {
+          const { data: authData } = await supabase.auth.admin.createUser({
+            email: cleanEmail,
+            email_confirm: true,
+          });
+          if (authData?.user?.id) {
+            authUserId = authData.user.id;
+          }
+        } catch (_) {}
+
+        if (!authUserId) {
+          try {
+            const { data: listData } = await supabase.auth.admin.listUsers();
+            const existingAuth = listData?.users?.find(
+              (u: any) => u.email?.toLowerCase() === cleanEmail.toLowerCase()
+            );
+            if (existingAuth) authUserId = existingAuth.id;
+          } catch (_) {}
+        }
+
+        if (authUserId) {
+          const { data: newUser } = await supabase
+            .from("users")
+            .insert({
+              id: authUserId,
+              vit_email: cleanEmail,
+              full_name: parsed.fullName,
+              role: parsed.role,
+              id_number: parsed.prn,
+            })
+            .select("id")
+            .single();
+          if (newUser?.id) {
+            userId = newUser.id;
+          }
         }
       }
     } catch (dbErr) {

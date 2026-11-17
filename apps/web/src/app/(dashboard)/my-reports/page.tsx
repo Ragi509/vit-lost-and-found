@@ -241,7 +241,10 @@ export default function MyReportsPage() {
 
     try {
       const session = getStoredSession();
-      const res = await fetch(`/api/reports/${reportToDelete.id}?userId=${session?.id || ""}`, {
+      const queryParams = new URLSearchParams();
+      if (session?.id) queryParams.set("userId", session.id);
+      if (session?.email) queryParams.set("userEmail", session.email);
+      const res = await fetch(`/api/reports/${reportToDelete.id}?${queryParams.toString()}`, {
         method: "DELETE",
       });
 

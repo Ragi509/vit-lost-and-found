@@ -114,14 +114,16 @@ export async function PATCH(
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    // 2. Ownership check (supports ID, user email match, and admin role)
+    // 2. Ownership check (strictly enforces owner match or approved admin)
     const matchesOwnerId = Boolean(resolvedUserId && existingReport.reporter_id === resolvedUserId);
     const matchesOwnerEmail = Boolean(
       (authUser?.email && existingReport.reporter?.vit_email?.toLowerCase() === authUser.email.toLowerCase()) ||
       (body.reporterEmail && existingReport.reporter?.vit_email?.toLowerCase() === body.reporterEmail.trim().toLowerCase())
     );
 
-    if (!matchesOwnerId && !matchesOwnerEmail) {
+    const isAuthorized = matchesOwnerId || matchesOwnerEmail;
+
+    if (!isAuthorized) {
       // Check if admin
       const { data: adminRec } = await supabase
         .from("admins")
@@ -312,12 +314,13 @@ export async function DELETE(
 
     const authUser = await resolveAuthUser(request, supabase);
     const { searchParams } = new URL(request.url);
+    const userEmail = searchParams.get("userEmail") || searchParams.get("reporterEmail") || authUser?.email;
     const resolvedUserId = searchParams.get("userId") || searchParams.get("reporterId") || authUser?.id;
 
     // 1. Fetch current report
     const { data: existingReport, error: fetchErr } = await supabase
       .from("reports")
-      .select("*")
+      .select("*, reporter:users(id, vit_email)")
       .eq("id", id)
       .maybeSingle();
 
@@ -325,12 +328,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    // 2. Ownership check
-    if (resolvedUserId && existingReport.reporter_id !== resolvedUserId) {
+    // 2. Ownership check (strictly enforces owner match or approved admin)
+    const matchesOwnerId = Boolean(resolvedUserId && existingReport.reporter_id === resolvedUserId);
+    const matchesOwnerEmail = Boolean(
+      (authUser?.email && existingReport.reporter?.vit_email?.toLowerCase() === authUser.email.toLowerCase()) ||
+      (userEmail && existingReport.reporter?.vit_email?.toLowerCase() === userEmail.trim().toLowerCase())
+    );
+
+    const isAuthorized = matchesOwnerId || matchesOwnerEmail;
+
+    if (!isAuthorized) {
       const { data: adminRec } = await supabase
         .from("admins")
         .select("id")
-        .eq("id", resolvedUserId)
+        .eq("id", resolvedUserId || "")
         .eq("approval_status", "approved")
         .maybeSingle();
 
@@ -360,11 +371,11 @@ export async function DELETE(
       const matchIds = matches.map((m: any) => m.id);
       const { data: verifs } = await supabase
         .from("verifications")
-        .select("id")
-        .in("match_id", matchIds)
-        .limit(1);
+        .select("id, result")
+        .in("match_id", matchIds);
 
-      if (verifs && verifs.length > 0) {
+      const pendingVerif = verifs?.find((v: any) => v.result === "pending");
+      if (pendingVerif) {
         return NextResponse.json(
           { error: "Cannot delete: A verification claim is actively pending review." },
           { status: 409 }
@@ -374,11 +385,11 @@ export async function DELETE(
 
     const { data: escalations } = await supabase
       .from("escalations")
-      .select("id")
-      .eq("report_id", id)
-      .limit(1);
+      .select("id, status")
+      .eq("report_id", id);
 
-    if (escalations && escalations.length > 0) {
+    const pendingEscalation = escalations?.find((e: any) => e.status === "pending" || e.status === "in_review");
+    if (pendingEscalation) {
       return NextResponse.json(
         { error: "Cannot delete: This report has an open security desk escalation." },
         { status: 409 }

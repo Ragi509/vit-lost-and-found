@@ -44,6 +44,52 @@ async function fetchEmbeddingVector(text: string): Promise<number[] | null> {
   return null;
 }
 
+async function ensurePublicUser(supabase: any, email: string, fullName?: string): Promise<string | null> {
+  const cleanEmail = email.trim().toLowerCase();
+  const { data: userRec } = await supabase
+    .from("users")
+    .select("id")
+    .eq("vit_email", cleanEmail)
+    .maybeSingle();
+
+  if (userRec?.id) return userRec.id;
+
+  let authUserId: string | null = null;
+  try {
+    const { data: authData } = await supabase.auth.admin.createUser({
+      email: cleanEmail,
+      email_confirm: true,
+    });
+    if (authData?.user?.id) authUserId = authData.user.id;
+  } catch (_) {}
+
+  if (!authUserId) {
+    try {
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      const existingAuth = listData?.users?.find(
+        (u: any) => u.email?.toLowerCase() === cleanEmail
+      );
+      if (existingAuth?.id) authUserId = existingAuth.id;
+    } catch (_) {}
+  }
+
+  if (authUserId) {
+    const { data: newUser } = await supabase
+      .from("users")
+      .insert({
+        id: authUserId,
+        vit_email: cleanEmail,
+        full_name: fullName || cleanEmail.split("@")[0],
+        role: "Student",
+        id_number: "PRN-241" + Math.floor(1000 + Math.random() * 9000),
+      })
+      .select("id")
+      .single();
+    if (newUser?.id) return newUser.id;
+  }
+  return null;
+}
+
 export async function GET(request: Request) {
   try {
     const supabase = createAdminClient();
@@ -152,23 +198,7 @@ export async function POST(request: Request) {
     // 1a. Try lookup by email body param
     const cleanBodyEmail = reporterEmail ? reporterEmail.trim().toLowerCase() : null;
     if (!validUserId && cleanBodyEmail) {
-      const { data: userRecord } = await supabase
-        .from("users")
-        .select("id")
-        .eq("vit_email", cleanBodyEmail)
-        .maybeSingle();
-
-      if (userRecord?.id) {
-        validUserId = userRecord.id;
-      } else {
-        // Auto-upsert so new users can submit without a pre-seeded row
-        const { data: newUser } = await supabase
-          .from("users")
-          .insert({ vit_email: cleanBodyEmail, full_name: cleanBodyEmail.split("@")[0], role: "Student", id_number: "PRN-0000" })
-          .select("id")
-          .single();
-        if (newUser?.id) validUserId = newUser.id;
-      }
+      validUserId = await ensurePublicUser(supabase, cleanBodyEmail);
     }
 
     // 1b. Cookie session fallback
@@ -182,21 +212,7 @@ export async function POST(request: Request) {
             validUserId = parsed.id;
           } else if (parsed.email) {
             const cleanCookieEmail = parsed.email.trim().toLowerCase();
-            const { data: cookieUser } = await supabase
-              .from("users")
-              .select("id")
-              .eq("vit_email", cleanCookieEmail)
-              .maybeSingle();
-            if (cookieUser?.id) {
-              validUserId = cookieUser.id;
-            } else {
-              const { data: nu } = await supabase
-                .from("users")
-                .insert({ vit_email: cleanCookieEmail, full_name: cleanCookieEmail.split("@")[0], role: "Student", id_number: "PRN-0000" })
-                .select("id")
-                .single();
-              if (nu?.id) validUserId = nu.id;
-            }
+            validUserId = await ensurePublicUser(supabase, cleanCookieEmail, parsed.fullName);
           }
         } catch (_) {}
       }
