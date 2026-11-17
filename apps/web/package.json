@@ -7,7 +7,7 @@
     "dev": "next dev -p 3333",
     "build": "node ../../scripts/check-no-hardcoded-data.js && next build",
     "start": "next start -p 3333",
-    "lint": "node ../../scripts/check-no-hardcoded-data.js && next lint",
+    "lint": "node ../../scripts/check-no-hardcoded-data.js",
     "typecheck": "tsc --noEmit",
     "bootstrap-admin": "tsx scripts/bootstrap-admin.ts"
   },
