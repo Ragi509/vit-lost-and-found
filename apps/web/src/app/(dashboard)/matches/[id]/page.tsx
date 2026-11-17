@@ -46,92 +46,9 @@ interface MatchDetails {
   };
 }
 
-const DEMO_MATCH_DETAILS_MAP: Record<string, MatchDetails> = {
-  "67b5c191-c247-4952-b8ec-fbbfa076413d": {
-    id: "67b5c191-c247-4952-b8ec-fbbfa076413d",
-    confidence_score: 0.88,
-    text_score: 0.89,
-    image_score: 0.87,
-    category_score: 1.0,
-    lost_item: {
-      title: "Dell Inspiron 15 3520 Laptop (Silver-Grey)",
-      category: "Laptops & Accessories",
-      reporter: "Ragini Kengale (Student)",
-      location: "Mechanical Lab 304, Ground Floor",
-      date: "Today, 10:15 AM",
-      description: "Silver-grey Dell Inspiron 15 with dark grey neoprene sleeve and 65W charging adapter. Small scratch on right bezel.",
-      photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/67b5c191-c247-4952-b8ec-fbbfa076413d/photo.jpg",
-    },
-    found_item: {
-      title: "Dell laptop with charger",
-      category: "Laptops & Accessories",
-      reporter: "Aditya Joshi (Turned in to Desk)",
-      location: "Mechanical Lab 304, Ground Floor",
-      date: "Today, 11:30 AM",
-      holding_location: "Central Campus Security Desk (Building B)",
-      description: "Silver Dell laptop with charger turned in after lab session. Held safely at Central Desk.",
-      photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/67b5c191-c247-4952-b8ec-fbbfa076413d/photo.jpg",
-    },
-  },
-  "6eb4c842-8353-48ee-a979-994ae7918a28": {
-    id: "6eb4c842-8353-48ee-a979-994ae7918a28",
-    confidence_score: 0.875,
-    text_score: 0.88,
-    image_score: 0.87,
-    category_score: 1.0,
-    lost_item: {
-      title: "Casio fx-991CW ClassWiz Scientific Calculator",
-      category: "Study Material",
-      reporter: "Neha Patil (Student)",
-      location: "Drafting Hall 102, Main Building",
-      date: "Today, 1:45 PM",
-      description: "Black and white scientific calculator with small white sticker on reverse and student name inscription.",
-      photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/6eb4c842-8353-48ee-a979-994ae7918a28/photo.jpg",
-    },
-    found_item: {
-      title: "Casio scientific calculator with white cover",
-      category: "Study Material",
-      reporter: "Aditya Joshi (Turned in to Desk)",
-      location: "Drafting Hall 102, Main Building",
-      date: "Today, 2:15 PM",
-      holding_location: "D-Block Security Counter",
-      description: "Found on second bench near entrance of Drafting Hall 102. Has white slide-on cover.",
-      photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/6eb4c842-8353-48ee-a979-994ae7918a28/photo.jpg",
-    },
-  },
-  "f87038b5-555e-4c54-8fc7-961f74a87a0e": {
-    id: "f87038b5-555e-4c54-8fc7-961f74a87a0e",
-    confidence_score: 0.865,
-    text_score: 0.87,
-    image_score: 0.86,
-    category_score: 1.0,
-    lost_item: {
-      title: "boAt Airdopes 141 ANC Wireless Earbuds (White)",
-      category: "Audio & Accessories",
-      reporter: "Ragini Kengale (Student)",
-      location: "Central Library Reading Room (2nd Floor)",
-      date: "Today, 11:30 AM",
-      description: "White earbuds charging case with blue braided strap attached to keyring loop.",
-      photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/f87038b5-555e-4c54-8fc7-961f74a87a0e/photo.jpg",
-    },
-    found_item: {
-      title: "White boAt wireless earbuds case with blue strap",
-      category: "Audio & Accessories",
-      reporter: "Neha Patil (Turned in to Desk)",
-      location: "Central Library Reading Room (2nd Floor)",
-      date: "Today, 1:00 PM",
-      holding_location: "Central Library Circulation & Custody Desk",
-      description: "Found left behind on study desk in quiet reading area. Distinct blue strap.",
-      photo_url: "https://ruvkhuocnixoouphosku.supabase.co/storage/v1/object/public/item-photos/f87038b5-555e-4c54-8fc7-961f74a87a0e/photo.jpg",
-    },
-  },
-};
-
 export default function MatchDetailPage({ params }: { params: { id: string } }) {
-  const [match, setMatch] = useState<MatchDetails | null>(
-    DEMO_MATCH_DETAILS_MAP[params.id] || DEMO_MATCH_DETAILS_MAP["67b5c191-c247-4952-b8ec-fbbfa076413d"]
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const [match, setMatch] = useState<MatchDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMatch = async () => {
@@ -169,14 +86,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               },
             });
           } else {
-            setMatch(DEMO_MATCH_DETAILS_MAP[params.id] || DEMO_MATCH_DETAILS_MAP["67b5c191-c247-4952-b8ec-fbbfa076413d"]);
+            setMatch(null);
           }
         } else {
-          setMatch(DEMO_MATCH_DETAILS_MAP[params.id] || DEMO_MATCH_DETAILS_MAP["67b5c191-c247-4952-b8ec-fbbfa076413d"]);
+          setMatch(null);
         }
       } catch (e) {
         console.warn("Match fetch warning:", e);
-        setMatch(DEMO_MATCH_DETAILS_MAP[params.id] || DEMO_MATCH_DETAILS_MAP["67b5c191-c247-4952-b8ec-fbbfa076413d"]);
+        setMatch(null);
       } finally {
         setIsLoading(false);
       }

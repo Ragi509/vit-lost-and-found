@@ -55,3 +55,37 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
     </div>
   );
 };
+
+export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) => {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 p-5 shadow-xs space-y-4 animate-pulse",
+        className
+      )}
+    >
+      <div className="w-full h-40 rounded-xl bg-slate-200/70 dark:bg-slate-800/70" />
+      <div className="space-y-2">
+        <div className="h-4 w-3/4 bg-slate-200/80 dark:bg-slate-800/80 rounded-md" />
+        <div className="h-3 w-1/2 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+      </div>
+      <div className="flex items-center justify-between pt-2">
+        <div className="h-6 w-20 bg-slate-200/60 dark:bg-slate-800/60 rounded-full" />
+        <div className="h-6 w-16 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+      </div>
+    </div>
+  );
+};
+
+export const SkeletonGrid: React.FC<{ count?: number; className?: string }> = ({
+  count = 6,
+  className,
+}) => {
+  return (
+    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5", className)}>
+      {Array.from({ length: count }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
+  );
+};

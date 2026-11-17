@@ -16,8 +16,10 @@ import {
   CheckCircle,
   AlertCircle,
   X,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, StatusBadge, EmptyState } from "@vit/ui";
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, StatusBadge, EmptyState, SkeletonGrid } from "@vit/ui";
 import { getStoredSession } from "@/lib/auth/session";
 
 interface BrowseItem {
@@ -54,6 +56,7 @@ export default function BrowsePage() {
 
   const [categories, setCategories] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+  const [isAuthRequired, setIsAuthRequired] = useState(false);
 
   // Claim modal state
   const [selectedFoundItem, setSelectedFoundItem] = useState<BrowseItem | null>(null);
@@ -91,7 +94,11 @@ export default function BrowsePage() {
       if (session?.id) params.set("userId", session.id);
 
       const res = await fetch(`/api/browse?${params.toString()}`);
-      if (res.ok) {
+      if (res.status === 401) {
+        setIsAuthRequired(true);
+        setItems([]);
+      } else if (res.ok) {
+        setIsAuthRequired(false);
         const data = await res.json();
         if (Array.isArray(data.items)) {
           setItems(data.items);
@@ -293,12 +300,59 @@ export default function BrowsePage() {
         </select>
       </div>
 
+      {/* Quick Campus Landmarks Chips */}
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mr-1 flex items-center gap-1">
+          <MapPin className="w-3 h-3" /> Quick Filter:
+        </span>
+        {["Central Library", "Sharad Arena", "Sports Complex", "Cafeteria", "Main Gate 1"].map((landmark) => (
+          <button
+            key={landmark}
+            onClick={() => setSelectedLocation(selectedLocation === landmark ? "all" : landmark)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              selectedLocation === landmark
+                ? "bg-[#23395B] text-white dark:bg-sky-400 dark:text-slate-950 font-semibold shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+            }`}
+          >
+            {landmark}
+          </button>
+        ))}
+        {selectedLocation !== "all" && (
+          <button
+            onClick={() => setSelectedLocation("all")}
+            className="text-[11px] font-semibold text-[#D95D5D] hover:underline ml-1"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
       {/* Results */}
       {isLoading ? (
-        <div className="flex flex-col justify-center items-center py-24 text-slate-400 gap-3">
-          <RefreshCw className="w-7 h-7 animate-spin text-[#3A7D80]" />
-          <span className="text-sm font-medium">Scanning campus catalog...</span>
-        </div>
+        <SkeletonGrid count={6} />
+      ) : isAuthRequired ? (
+        <Card className="p-8 sm:p-10 text-center border-dashed border-2 border-[#23395B]/20 dark:border-sky-400/20 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900/90 dark:to-slate-900/40 rounded-3xl max-w-xl mx-auto space-y-4 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[#23395B]/10 dark:bg-sky-400/10 text-[#23395B] dark:text-sky-300 flex items-center justify-center mx-auto shadow-xs">
+            <ShieldCheck className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-xl font-extrabold tracking-tight text-[#202B3C] dark:text-slate-100">
+              Institutional Sign In Required
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+              Campus lost and found records are protected for Vishwakarma Institute of Technology students and staff. Sign in with your official <strong className="text-slate-700 dark:text-slate-200">@vit.edu</strong> email to browse all campus items and submit ownership verification claims.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link href="/login?redirect=/browse">
+              <Button variant="primary" size="md" className="rounded-xl shadow-xs">
+                <span>Sign In with VIT Email</span>
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </Card>
       ) : items.length === 0 ? (
         <EmptyState
           title="No campus items match your filters"

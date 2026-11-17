@@ -17,41 +17,14 @@ interface Notification {
   link?: string;
 }
 
-const DEMO_NOTIFICATIONS_LIST: Notification[] = [
-  {
-    id: "notif-001",
-    type: "match",
-    title: "New AI Match Detected (~88% Match)",
-    body: "An item matching your reported Dell Inspiron 15 3520 Laptop has been logged at Mechanical Lab 304.",
-    timestamp: "Just now",
-    read: false,
-    link: "/matches/67b5c191-c247-4952-b8ec-fbbfa076413d",
-  },
-  {
-    id: "notif-002",
-    type: "match",
-    title: "New AI Match Detected (~87% Match)",
-    body: "White boAt wireless earbuds case with blue strap was turned in at the Central Library Circulation Desk.",
-    timestamp: "25m ago",
-    read: false,
-    link: "/matches/f87038b5-555e-4c54-8fc7-961f74a87a0e",
-  },
-  {
-    id: "notif-003",
-    type: "system",
-    title: "Campus Security Desk Sync",
-    body: "Bibwewadi & Kondhwa campus intake ledgers synchronized. 8 active reports currently scanning.",
-    timestamp: "1h ago",
-    read: true,
-  },
-];
-
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(DEMO_NOTIFICATIONS_LIST);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "match" | "verification" | "system">("all");
   const [isLiveConnected, setIsLiveConnected] = useState(false);
 
   const fetchLiveNotifications = async () => {
+    setIsLoading(true);
     try {
       let session = getStoredSession();
       if (!session) {
@@ -71,7 +44,7 @@ export default function NotificationsPage() {
       const res = await fetch(`/api/notifications${userParam}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.notifications && Array.isArray(data.notifications) && data.notifications.length > 0) {
+        if (data.notifications && Array.isArray(data.notifications)) {
           const formatted: Notification[] = data.notifications.map((n: any) => ({
             id: n.id,
             type: n.type as any,
@@ -84,14 +57,16 @@ export default function NotificationsPage() {
 
           setNotifications(formatted);
         } else {
-          setNotifications(DEMO_NOTIFICATIONS_LIST);
+          setNotifications([]);
         }
       } else {
-        setNotifications(DEMO_NOTIFICATIONS_LIST);
+        setNotifications([]);
       }
     } catch (e) {
       console.warn("Notifications fetch notice:", e);
-      setNotifications(DEMO_NOTIFICATIONS_LIST);
+      setNotifications([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
